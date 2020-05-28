@@ -18,26 +18,26 @@ class Problem(models.Model):
     _inherit = 'project.task'
     _description = u"Проблема"
     _display_name = u"Проблема"
-    name = fields.Char(string=u'Наименование', track_visibility='onchange', size=128, required=True, index=True)
+    name = fields.Char(string=u'Наименование',track_visibility='onchange', size=128, required=True, select=True)
     kro_project_id = fields.Many2one('project.project', u'Проект', readonly=True, ondelete="set null")
-    date_deadline = fields.Date(u'Плановая дата решения', index=True, copy=False, track_visibility='always')
-    fact_date = fields.Date(u'Фактическая дата', index=True, track_visibility='always')
-    user_id = fields.Many2one('res.users', u'Инициатор', index=True, track_visibility='onchange', ondelete="set null")
-    priority = fields.Selection([('0', u'Низкий'), ('1', u'Средний'), ('2', u'Высокий')], u'Приоритет', index=True, track_visibility='always')
-    # user_aim_id = fields.Many2one('res.users', u'Ответственный за определение целей', index=True, track_visibility='onchange', ondelete='set null')
-    # user_admin_id = fields.Many2one('res.users', u'Администратор', index=True, track_visibility='onchange')
-    addressee_id = fields.Many2one('res.users', u'Адресат', index=True, track_visibility='onchange', ondelete='set null')
-    current_user_id = fields.Many2one('res.users', compute='_compute_responsible', string=u'Ответственный', track_visibility='always', store=True)
+    date_deadline = fields.Date(u'Плановая дата решения', select=True, copy=False, track_visibility='always')
+    fact_date = fields.Date(u'Фактическая дата', select=True, track_visibility='always')
+    user_id = fields.Many2one('res.users', u'Инициатор', select=True, track_visibility='onchange', ondelete="set null")
+    priority = fields.Selection([('0', u'Низкий'), ('1', u'Средний'), ('2', u'Высокий')], u'Приоритет', select=True, track_visibility='always')
+    # user_aim_id = fields.Many2one('res.users', u'Ответственный за определение целей', select=True, track_visibility='onchange', ondelete='set null')
+    # user_admin_id = fields.Many2one('res.users', u'Администратор', select=True, track_visibility='onchange')
+    addressee_id = fields.Many2one('res.users', u'Адресат', select=True, track_visibility='onchange', ondelete='set null')
+    current_user_id = fields.Many2one('res.users', compute='_get_responsible', string=u'Ответственный', track_visibility='always', store=True)
     description = fields.Html(u'Формулировка проблемы', track_visibility='always')
     effects = fields.Text(u'Последствия', track_visibility='always')
     causes = fields.Text(u'Причины', track_visibility='always')
     decision = fields.Text(u'Решение', track_visibility='always')
-    reason_aside_problem = fields.Many2one('kro.problem', u'Причина откладывания - проблема', index=True, ondelete='set null', track_visibility='always')
-    reason_aside_aim = fields.Many2one('kro.aim', u'Причина откладывания - цель', index=True, ondelete='set null', track_visibility='always')
-    reason_aside_task = fields.Many2one('project.task', u'Причина откладывания - задача', index=True, ondelete='set null', track_visibility='always')
+    reason_aside_problem = fields.Many2one('kro.problem', u'Причина откладывания - проблема', select=True, ondelete='set null', track_visibility='always')
+    reason_aside_aim = fields.Many2one('kro.aim', u'Причина откладывания - цель', select=True, ondelete='set null', track_visibility='always')
+    reason_aside_task = fields.Many2one('project.task', u'Причина откладывания - задача', select=True, ondelete='set null', track_visibility='always')
     reason_correction = fields.Text(u'Причина коррекции', track_visibility='always')
     aim_ids = fields.One2many('kro.aim', 'problem_id', ondelete="cascade", string=u'Цели', track_visibility='always')
-    # stage_id = fields.Many2one('project.task.type', u'Статус', track_visibility='onchange', index=True, domain="[('project_ids', '=', project_id)]", copy=False),
+    # stage_id = fields.Many2one('project.task.type', u'Статус', track_visibility='onchange', select=True, domain="[('project_ids', '=', project_id)]", copy=False),
     state = fields.Selection([('plan', u'Планирование'),
                               ('moved', u'Передана'),
                               ('process', u'Обрабатывается'),
@@ -67,7 +67,7 @@ class Problem(models.Model):
 
     @api.one
     @api.depends('state', 'addressee_id', 'user_id')
-    def _compute_responsible(self):
+    def _get_responsible(self):
         if self.state in ['plan', 'suspended', 'taken']:
             self.current_user_id = self.user_id
         if self.state in ['moved', 'process']:
@@ -104,8 +104,8 @@ class Problem(models.Model):
     @api.model
     def _store_history(self, ids):
         if 1:
-            return ids
-        return ids
+            return False
+        return True
 
     @api.model
     def _hours_get(self, ids):
@@ -166,18 +166,18 @@ class Aim(models.Model):
     _description = u"Цель"
     _order = 'code'
     code = fields.Char(string=u'Цель № ', required=True, default="/")
-    date_start = fields.Date(string=u'Дата начала', compute='_compute_count', store=True)
-    date_end = fields.Date(string=u'Дата завершения', compute='_compute_count', store=True)
+    date_start = fields.Date(string=u'Дата начала', compute='_time_count', store=True)
+    date_end = fields.Date(string=u'Дата завершения', compute='_time_count', store=True)
     problem_id = fields.Many2one('kro.problem', u'Проблема', ondelete='set null')
     project_id = fields.Many2one('project.project', string=u'Проект', ondelete='set null', help=u'Проект для прямой привязки')
     problem_project_id = fields.Many2one(related='problem_id.kro_project_id', string=u'Проект', ondelete='set null', readonly=True, help=u'Проект от проблемы')
-    priority = fields.Selection([('0', u'Низкий'), ('1', u'Средний'), ('2', u'Высокий')], u'Приоритет', index=True, track_visibility='always')
-    reason_aside_problem = fields.Many2one('kro.problem', u'Причина откладывания - проблема', index=True, ondelete='set null', track_visibility='always')
-    reason_aside_aim = fields.Many2one('kro.aim', u'Причина откладывания - цель', index=True, ondelete='set null', track_visibility='always')
-    reason_aside_task = fields.Many2one('project.task', u'Причина откладывания - задача', index=True, ondelete='set null', track_visibility='always')
+    priority = fields.Selection([('0', u'Низкий'), ('1', u'Средний'), ('2', u'Высокий')], u'Приоритет', select=True, track_visibility='always')
+    reason_aside_problem = fields.Many2one('kro.problem', u'Причина откладывания - проблема', select=True, ondelete='set null', track_visibility='always')
+    reason_aside_aim = fields.Many2one('kro.aim', u'Причина откладывания - цель', select=True, ondelete='set null', track_visibility='always')
+    reason_aside_task = fields.Many2one('project.task', u'Причина откладывания - задача', select=True, ondelete='set null', track_visibility='always')
     reason_correction = fields.Text(u'Причина коррекции', track_visibility='always')
-    user_id = fields.Many2one('res.users', u'Ответственный за планирование', index=True, track_visibility='onchange', ondelete="set null")
-    current_user_id = fields.Many2one('res.users', compute='_compute_responsible', string=u'Ответственный', track_visibility='always', store=True)
+    user_id = fields.Many2one('res.users', u'Ответственный за планирование', select=True, track_visibility='onchange', ondelete="set null")
+    current_user_id = fields.Many2one('res.users', compute='_get_responsible', string=u'Ответственный', track_visibility='always', store=True)
     job_ids = fields.One2many('kro.job', 'aim_id', ondelete="cascade", string=u'Задачи', track_visibility='always')
     task_ids = fields.One2many('project.task', 'aim_id', ondelete="cascade", string=u'Задания', track_visibility='always')
     task_count = fields.Integer(compute='_task_count')
@@ -189,9 +189,9 @@ class Aim(models.Model):
     remaining_hours = fields.Boolean()
     effective_hours = fields.Boolean()
     total_hours = fields.Boolean()
-    planned_hours = fields.Float(compute='_compute_count', string=u'Запланированно часов всего')
-    total_time = fields.Integer(compute='_compute_count', string=u'Затраченно часов всего')
-    progress = fields.Float(compute='_compute_count', string=u'Прогресс')
+    planned_hours = fields.Float(compute='_time_count', string=u'Запланированно часов всего')
+    total_time = fields.Integer(compute='_time_count', string=u'Затраченно часов всего')
+    progress = fields.Float(compute='_time_count', string=u'Прогресс')
     delay_hours = fields.Boolean()
     timesheet_ids = fields.Boolean()
     analytic_account_id = fields.Boolean()
@@ -209,7 +209,7 @@ class Aim(models.Model):
 
     @api.one
     @api.depends('state', 'user_id')
-    def _compute_responsible(self):
+    def _get_responsible(self):
         admins = self.env.ref('kro.group_adm_bp').users
         if len(admins) and self.state in ['defined']:
             self.current_user_id = admins[0]
@@ -218,7 +218,7 @@ class Aim(models.Model):
 
     @api.one
     @api.depends('job_ids', 'task_ids')
-    def _compute_count(self):
+    def _time_count(self):
         planned_hours = 0
         total_time = 0
         planned_hours += sum([r.planned_hours for r in self.task_ids])
@@ -244,7 +244,7 @@ class Aim(models.Model):
     @api.model
     def action_tasks(self, active_id):
         search_view = self.env['ir.model.data'].get_object_reference('kro', 'kro_aim_all_tasks')
-        # view_id = self.env['ir.model.data'].get_object_reference('kro', 'kro_aims_task_search_form')
+        view_id = self.env['ir.model.data'].get_object_reference('kro', 'kro_aims_task_search_form')
         aim = self.env['kro.aim'].browse(active_id)
         job_tasks_ids = []
         for r in aim.job_ids:
@@ -331,22 +331,22 @@ class Job(models.Model):
     _description = u'Задача'
     _order = 'code'
     code = fields.Char(string=u'Номер', required=True, default="/")
-    date_start = fields.Date(string=u'Дата начала', compute='_compute_count', store=True)
-    date_end = fields.Date(string=u'Дата завершения', compute='_compute_count', store=True)
-    priority = fields.Selection([('0', u'Низкий'), ('1', u'Средний'), ('2', u'Высокий')], u'Приоритет', index=True, track_visibility='always')
+    date_start = fields.Date(string=u'Дата начала', compute='_time_count', store=True)
+    date_end = fields.Date(string=u'Дата завершения', compute='_time_count', store=True)
+    priority = fields.Selection([('0', u'Низкий'), ('1', u'Средний'), ('2', u'Высокий')], u'Приоритет', select=True, track_visibility='always')
     aim_id = fields.Many2one('kro.aim', u'Цель', ondelete='set null', track_visibility='always')
     problem_id = fields.Many2one(related='aim_id.problem_id', string=u'Проблема', readonly=True, ondelete="set null")
     project_id = fields.Many2one(related='problem_id.kro_project_id', string=u'Проект', readonly=True, ondelete='set null')
     aim_project_id = fields.Many2one(related='aim_id.project_id', string=u'Проект', readonly=True, ondelete='set null', help='Проект напрямую привязанный к цели')
-    user_id = fields.Many2one('res.users', u'Ответственный за планирование', index=True, track_visibility='onchange', ondelete="set null")
-    current_user_id = fields.Many2one('res.users', compute='_compute_responsible', string=u'Ответственный', track_visibility='always', store=True)
+    user_id = fields.Many2one('res.users', u'Ответственный за планирование', select=True, track_visibility='onchange', ondelete="set null")
+    current_user_id = fields.Many2one('res.users', compute='_get_responsible', string=u'Ответственный', track_visibility='always', store=True)
     task_ids = fields.One2many('project.task', 'job_id', ondelete="cascade", string=u'Задания', track_visibility='always')
     task_count = fields.Integer(compute='_task_count', string=u'Количество заданий')
-    planned_hours = fields.Float(compute='_compute_count', string=u'Запланированно часов всего')
-    total_time = fields.Integer(compute='_compute_count', string=u'Затраченно часов всего')
-    reason_aside_problem = fields.Many2one('kro.problem', u'Причина откладывания - проблема', index=True, ondelete='set null', track_visibility='always')
-    reason_aside_aim = fields.Many2one('kro.aim', u'Причина откладывания - цель', index=True, ondelete='set null', track_visibility='always')
-    reason_aside_task = fields.Many2one('project.task', u'Причина откладывания - задача', index=True, ondelete='set null', track_visibility='always')
+    planned_hours = fields.Float(compute='_time_count', string=u'Запланированно часов всего')
+    total_time = fields.Integer(compute='_time_count', string=u'Затраченно часов всего')
+    reason_aside_problem = fields.Many2one('kro.problem', u'Причина откладывания - проблема', select=True, ondelete='set null', track_visibility='always')
+    reason_aside_aim = fields.Many2one('kro.aim', u'Причина откладывания - цель', select=True, ondelete='set null', track_visibility='always')
+    reason_aside_task = fields.Many2one('project.task', u'Причина откладывания - задача', select=True, ondelete='set null', track_visibility='always')
     reason_correction = fields.Text(u'Причина коррекции', track_visibility='always')
     state = fields.Selection([('plan', u'Планирование'),
                               ('defined', u'Определена'),
@@ -357,7 +357,7 @@ class Job(models.Model):
     remaining_hours = fields.Boolean()
     effective_hours = fields.Boolean()
     total_hours = fields.Boolean()
-    progress = fields.Float(compute='_compute_count', string=u'Прогресс')
+    progress = fields.Float(compute='_time_count', string=u'Прогресс')
     delay_hours = fields.Boolean()
     timesheet_ids = fields.Boolean()
     analytic_account_id = fields.Boolean()
@@ -379,7 +379,7 @@ class Job(models.Model):
 
     @api.one
     @api.depends('state', 'user_id')
-    def _compute_responsible(self):
+    def _get_responsible(self):
         admins = self.env.ref('kro.group_adm_bp').users
         if len(admins) and self.state in ['defined']:
             self.current_user_id = admins[0]
@@ -416,7 +416,7 @@ class Job(models.Model):
 
     @api.one
     @api.depends('task_ids')
-    def _compute_count(self):
+    def _time_count(self):
         if len(self.task_ids):
             self.planned_hours = sum([r.planned_hours for r in self.task_ids])
             self.total_time = sum([r.effective_hours for r in self.task_ids])
@@ -499,23 +499,25 @@ class Task(models.Model):
     plan_time_ap = fields.Float(u'План по времени подтверджающий', track_visibility='onchange')
     got_approver = fields.Boolean(u'С подтверждающим', track_visibility='onchange')
     amount = fields.Float(u'Бюджет', track_visibility='onchange')
-    mark_state = fields.Selection([('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('6', '6'), ('7', '7')], string=u'Оценка статуса', track_visibility='onchange')
-    mark_result = fields.Selection([('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('6', '6'), ('7', '7')], string=u'Оценка результата', track_visibility='onchange')
+    # mark_state = fields.Selection([('1','1'),('2','2'),('3','3'),('4','4'),('5','5'),('6','6'),('7','7')], string=u'Оценка статуса', track_visibility='onchange')
+    # mark_result = fields.Selection([('1','1'),('2','2'),('3','3'),('4','4'),('5','5'),('6','6'),('7','7')], string=u'Оценка результата', track_visibility='onchange')
+    mark_state = fields.Integer(string=u'Оценка статуса', track_visibility='onchange', group_operator='avg')
+    mark_result = fields.Integer(string=u'Оценка результата', track_visibility='onchange', group_operator='avg')
 
     job_id = fields.Many2one('kro.job', string=u'Задача', ondelete="set null", help=u'Задача родитель')
     job_aim_id = fields.Many2one(related='job_id.aim_id', string=u'Цель', readonly=True, help=u'Цель из задачи')
-    aim_id = fields.Many2one('kro.aim', string=u'Цель', ondelete="set null", help=u'Цель для прямой привязки минуя задачу')
+    aim_id = fields.Many2one('kro.aim', string=u'Цель', ondelete="set null" , help=u'Цель для прямой привязки минуя задачу')
     problem_id = fields.Many2one(related='job_aim_id.problem_id', string=u'Проблема', readonly=True, help=u'Проблема из цели из родительской задачи')
     problem_project_id = fields.Many2one(related='job_aim_id.problem_id.kro_project_id', string=u'Проект', readonly=True, help=u'Проект из проблемы из цели из родительской задачи')
     aim_project_id = fields.Many2one(related='job_aim_id.project_id', string=u'Проект', readonly=True, help=u'Проект из цели из родительской задачи (привязанный непосредственно к цели проект минуя проблему)')
     parent_project_id = fields.Many2one(related='job_aim_id.problem_id.kro_project_id.project_id', string=u'Проект родитель', readonly=True, help=u'Проект родитель проекта из проблемы из цели из родительской задачи')
 
     required_result = fields.Text(u'Требуемый результат', track_visibility='onchange')
-    priority = fields.Selection([('0', u'Низкий'), ('1', u'Средний'), ('2', u'Высокий')], u'Приоритет', index=True, track_visibility='onchange')
+    priority = fields.Selection([('0', u'Низкий'), ('1', u'Средний'), ('2', u'Высокий')], u'Приоритет', select=True, track_visibility='onchange')
     user_executor_id = fields.Many2one('res.users', string=u'Исполнитель', ondelete="set null", track_visibility='onchange')
     user_predicator_id = fields.Many2one('res.users', string=u'Утверждающий', ondelete="set null", track_visibility='onchange')
     user_approver_id = fields.Many2one('res.users', string=u'Подтверждающий', ondelete="set null", track_visibility='onchange')
-    current_user_id = fields.Many2one('res.users', compute='_compute_responsible', string=u'Ответственный', track_visibility='always', store=True)
+    current_user_id = fields.Many2one('res.users', compute='_get_responsible', string=u'Ответственный', track_visibility='always', store=True)
     approved_by_executor = fields.Boolean(u'Согласовал исполнитель', track_visibility='onchange')
     approved_by_predicator = fields.Boolean(u'Согласовал утверждающий', track_visibility='onchange')
     approved_by_approver = fields.Boolean(u'Согласовал подтверждающий', track_visibility='onchange')
@@ -530,10 +532,10 @@ class Task(models.Model):
                               ('finished', u'Завершено'),
                               ('correction', u'Коррекция'),
                               ], u'Статус',  default='plan', track_visibility='onchange')
-    planned_hours = fields.Float(compute='_compute_count', string=u'Запланированно часов', readonly=True)
+    planned_hours = fields.Float(compute='_time_count', string=u'Запланированно часов', readonly=True)
     depend_on_ids = fields.Many2many('project.task', relation='depend_on_rel', column1='col_name1', column2='col_name2', string=u'Основание', track_visibility='onchange')
     dependent_ids = fields.Many2many('project.task', relation='dependent_rel', column1='col_name3', column2='col_name4', string=u'Зависимые', track_visibility='onchange')
-    progress = fields.Float(compute='_compute_count', string=u'Прогресс')
+    progress = fields.Float(compute='_time_count', string=u'Прогресс')
     executor = fields.Boolean(compute='_compute_fields', default=False, store=False, readonly=True)
     predicator = fields.Boolean(compute='_compute_fields', default=False, store=False, readonly=True)
     approver = fields.Boolean(compute='_compute_fields', default=False, store=False, readonly=True)
@@ -551,7 +553,7 @@ class Task(models.Model):
 
     @api.one
     @api.depends('state', 'user_executor_id', 'user_predicator_id', 'user_approver_id', 'user_id')
-    def _compute_responsible(self):
+    def _get_responsible(self):
         admins = self.env.ref('kro.group_adm_bp').users
         if self.state in ['plan', 'stated', 'approved', 'correction']:
             self.current_user_id = self.user_id
@@ -603,7 +605,7 @@ class Task(models.Model):
 
     @api.one
     @api.depends('plan_time_ex', 'plan_time_pr', 'plan_time_ap', 'timesheet_ids')
-    def _compute_count(self):
+    def _time_count(self):
         self.planned_hours = self.plan_time_ex+self.plan_time_pr+self.plan_time_ap
         time_finished = sum([r.unit_amount for r in self.timesheet_ids])
         if self.planned_hours:
@@ -697,7 +699,7 @@ class Task(models.Model):
 
     @api.model
     def _store_history(self, ids):
-        return ids
+        return True
 
     def _notification_get_recipient_groups(self, cr, uid, ids, message, recipients, context=None):
         res = super(Task, self)._notification_get_recipient_groups(cr, uid, ids, message, recipients, context=context)

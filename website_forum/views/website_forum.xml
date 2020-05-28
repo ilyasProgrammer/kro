@@ -18,9 +18,9 @@
         <script type="text/javascript" src="/website_forum/static/src/js/website_forum.share.js"/>
         <script type="text/javascript" src="/website_forum/static/src/js/website_tour_forum_question.js"/>
         <script type="text/javascript" src="/web/static/lib/jquery.textext/jquery.textext.js"/>
-        <script type="text/javascript" src="/website_forum/static/src/js/forum_suggestions.js"/>
     </xpath>
 </template>
+
 <!-- Layout add nav and footer -->
 <template id="header_footer_custom" inherit_id="website.footer_default"
     name="Footer Questions Link">
@@ -157,7 +157,7 @@
                             <h3 class="panel-title">Keep Informed</h3>
                         </div>
                         <div class="panel-body">
-                            <t t-call="website_mail_kro.follow">
+                            <t t-call="website_mail.follow">
                                 <t t-set="email" t-value="user.email"/>
                                 <t t-set="object" t-value="forum"/>
                             </t>
@@ -189,24 +189,7 @@
                                 <h3 class="panel-title">Question tools</h3>
                             </div>
                             <div class="panel-body text-center">
-                                <t t-set="object" t-value="question"/>
-                                <div class="input-group js_follow onn" t-att-data-id="object.id"
-                                 t-att-data-object="'forum.post'"
-                                 data-follow="off"
-                                 t-att-data-unsubscribe="None">
-                                <input type="email" name="email"
-                                   class="js_follow_email form-control js_website_autocomplete"
-                                   data-query-field="name"
-                                   data-display-field="name"
-                                   data-value-field="login"
-                                   data-limit="20"
-                                   data-domain='[]'
-                                   data-model="res.users"/>
-                                <span class="input-group-btn">
-                                    <button href="#" t-attf-class="btn btn-primary js_follow_btn visible">Подписать</button>
-                                </span>
-                            </div>
-                                <t t-call="website_mail_kro.follow"><t t-set="object" t-value="question"/></t>
+                                <t t-call="website_mail.follow"><t t-set="object" t-value="question"/></t>
                                 <div class="mt8">
                                     <strong><t t-raw="len(question.message_follower_ids)"/></strong> follower(s)
                                 </div>

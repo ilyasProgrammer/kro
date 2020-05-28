@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import openerp.modules.registry
 from datetime import datetime
 import werkzeug.exceptions
 import werkzeug.urls
@@ -9,14 +8,13 @@ import lxml
 from urllib2 import urlopen, URLError
 import base64
 
-from openerp import models
 import openerp
 from openerp import tools, _
 from openerp.addons.web import http
 from openerp.addons.web.controllers.main import binary_content
 from openerp.addons.web.http import request
 from openerp.addons.website.models.website import slug
-from openerp.osv import expression
+
 
 class WebsiteForum(http.Controller):
     _post_per_page = 10
@@ -754,10 +752,3 @@ class WebsiteForum(http.Controller):
         if not request.session.uid:
             return {'error': 'anonymous_user'}
         return post.unlink_comment(comment.id)[0]
-
-    @http.route('/get_man', type='json', auth="public", website=True)
-    def get_mention_suggestions(self, search, limit=8):
-        registry = openerp.modules.registry.RegistryManager.get(request.cr.dbname)
-        with registry.cursor() as cr:
-            res = registry['res.partner'].get_mention_suggestions(cr, openerp.SUPERUSER_ID, search, limit)
-        return res

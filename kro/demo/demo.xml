@@ -1,4 +1,4 @@
-<odoo>
+<openerp>
     <data>
         <!--  -->
         <!--   <record id="object0" model="ttt.ttt"> -->
@@ -27,4 +27,4 @@
         <!--   </record> -->
         <!--  -->
     </data>
-</odoo>
+</openerp>

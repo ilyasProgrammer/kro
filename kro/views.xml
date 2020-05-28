@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo>
+<openerp>
 <data>
     <menuitem name="Project" id="kro_proj_menu" parent="base.menu_main_pm" sequence="1"/>
     <!--ПРОЕКТ - PROJECT-->
@@ -371,6 +371,8 @@
         <field name="arch" type="xml">
             <search string="Tasks">
                 <field name="stage_id"/>
+                <field name="stage_id"/>
+                <field name="id"/>
                 <field name="id"/>
                 <field name="name"/>
                 <field name="tag_ids"/>
@@ -388,10 +390,10 @@
         <field name="view_mode">tree</field>
         <field name="view_id" ref="kro_aims_task_search_form"/>
     </record>
-    <record id="action_aims" model="ir.actions.act_window">
+    <record id="action_aims2" model="ir.actions.act_window">
         <field name="name">Цели</field>
         <field name="res_model">kro.aim</field>
-        <field name="view_mode">tree,calendar,form,gantt8</field>
+        <field name="view_mode">tree,form</field>
         <field name="context">{"search_default_my_aims":1}</field>
         <field name="view_id" ref="kro_aims_tree"/>
         <field name="help" type="html">
@@ -404,13 +406,13 @@
         <field name="sequence" eval="1"/>
         <field name="view_mode">tree</field>
         <field name="view_id" ref="kro_aims_tree"/>
-        <field name="act_window_id" ref="action_aims"/>
+        <field name="act_window_id" ref="action_aims2"/>
     </record>
     <record id="action_aim_form" model="ir.actions.act_window.view">
-        <field name="sequence" eval="1"/>
+        <field name="sequence" eval="3"/>
         <field name="view_mode">form</field>
         <field name="view_id" ref="kro_aim_form"/>
-        <field name="act_window_id" ref="action_aims"/>
+        <field name="act_window_id" ref="action_aims2"/>
     </record>
     <!--ЗАДАЧА - JOB-->
     <record id="kro_job_form" model="ir.ui.view">
@@ -885,6 +887,56 @@
     <record model="ir.ui.menu" id="project.menu_projects">
         <field name="groups_id" eval="[(6,0,[ref('kro.make_invisible')])]"/>
     </record>
+    <!--ОТЧЕТЫ-->
+    <record id="marks_report_tree" model="ir.ui.view">
+        <field name="name">project.task.tree.report.estimate</field>
+        <field name="model">project.task</field>
+        <field name="arch" type="xml">
+            <tree default_group_by="current_user_id">
+                <field name="current_user_id" string="Ответственный"/>
+                <field name="date_end"/>
+                <field name="name" string="Задание"/>
+                <field name="project_id"/>
+                <!--<field name="description"/>-->
+                <field name="effective_hours"/>
+                <field name="mark_state"/>
+                <field name="mark_result"/>
+            </tree>
+        </field>
+    </record>
+    <record id="marks_report_search" model="ir.ui.view">
+        <field name="name">project.task.search.report.estimate</field>
+        <field name="model">project.task</field>
+        <field name="arch" type="xml">
+            <search default_group_by="current_user_id">
+                <field name="current_user_id" string="Ответственный"/>
+                <field name="date_end"/>
+                <field name="name" string="Задание"/>
+                <field name="project_id"/>
+                <!--<field name="description"/>-->
+                <field name="effective_hours"/>
+                <field name="mark_state"/>
+                <field name="mark_result"/>
+                <group expand="0" string="Group By">
+                    <filter string="Ответственный" name="user" context="{'group_by':'current_user_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_marks_report" model="ir.actions.act_window">
+        <field name="name">Задания</field>
+        <field name="res_model">project.task</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="marks_report_search"/>
+        <field name="search_view_id" ref="marks_report_search"/>
+        <field name="context">{'search_default_user': 1}</field>
+    </record>
+    <record id="action_marks_report_view" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="marks_report_tree"/>
+        <field name="act_window_id" ref="action_marks_report"/>
+    </record>
     <!--МЕНЮ-->
     <menuitem id="project.menu_project_config" name="Configuration" parent="base.menu_main_pm" sequence="100" groups="project.group_project_manager,group_adm_bp,group_project_aim,group_project_obs,group_project_obs_max"/>
     <menuitem id="base.menu_project_general_settings" name="Settings" parent="project.menu_project_config" sequence="0" action="project.action_config_settings" groups="base.group_configuration"/>
@@ -892,10 +944,11 @@
     <menuitem id="project.menu_tasks_config" name="GTD" parent="project.menu_project_config" sequence="2" groups="base.group_configuration"/>
     <menuitem id='menu_kro_projects' action="action_projects" name="Проекты" parent="project.menu_project_config" sequence="1" groups="project.group_project_manager,group_adm_bp,group_project_aim,group_project_obs,group_project_obs_max"/>
     <menuitem id='menu_kro_problems' action="action_problems" name="Проблемы" parent="kro_proj_menu" sequence="2" groups="project.group_project_manager,group_adm_bp,group_project_aim,group_project_obs,group_project_obs_max"/>
-    <menuitem id='menu_kro_aims' action="action_aims" name="Цели" parent="kro_proj_menu" sequence="3" groups="project.group_project_manager,group_adm_bp,group_project_aim,group_project_obs,group_project_obs_max"/>
+    <menuitem id='menu_kro_aims' action="action_aims2" name="Цели" parent="kro_proj_menu" sequence="3" groups="project.group_project_manager,group_adm_bp,group_project_aim,group_project_obs,group_project_obs_max"/>
     <menuitem id='menu_kro_jobs' action="action_job" name="Задачи" parent="kro_proj_menu" sequence="4" groups="project.group_project_manager,group_adm_bp,group_project_aim,group_project_obs,group_project_obs_max"/>
     <menuitem id='menu_kro_tasks' action="kro_actions_view_taskss" string="Задания" name="Задания" parent="kro_proj_menu" sequence="5"/>
     <menuitem id='menu_kro_tasks_tree' action="kro_actions_view_taskss_tree" string="Задания-список" name="Задания-список" parent="kro_proj_menu" sequence="6"/>
+    <menuitem id='menu_kro_tasks_report_est' action="action_marks_report" string="Оценка заданий" name="Оценка заданий" parent="base.menu_project_report" sequence="1"/>
     <menuitem id="base.menu_main_pm" groups="project.group_project_manager,project.group_project_user,group_adm_bp,group_project_aim,group_project_obs,group_project_obs_max"/>
 </data>
-</odoo>
+</openerp>

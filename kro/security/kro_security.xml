@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo>
+<openerp>
 <data noupdate="1">
     <!--УДАЛЯЕМ МЕШАЮШИЕ ПРАВА ИЗ МОДУЛЯ PROJECT-->
     <!--<delete model="ir.model.access" id="access_project_task"/>-->
@@ -161,7 +161,7 @@
         <field name="perm_unlink" eval="1"/>
     </record>
     <record model="ir.rule" id="document_page_delete_creator">
-        <field name="name">Удалять или изменять страницу базы знаний может только её создатель</field>
+        <field name="name">Удалять страницу базы знаний может только её создатель</field>
         <field name="model_id" ref="document_page.model_document_page"/>
         <field name="domain_force">
             [
@@ -173,7 +173,6 @@
                                     (4,ref('group_project_obs_max')),
                                     (4,ref('project.group_project_user'))]"/>
         <field name="perm_unlink" eval="1"/>
-        <field name="perm_edit" eval="1"/>
     </record>
 </data>
-</odoo>
+</openerp>
