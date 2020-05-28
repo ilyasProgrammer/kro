@@ -1,0 +1,901 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data>
+    <menuitem name="Project" id="kro_proj_menu" parent="base.menu_main_pm" sequence="1"/>
+    <!--ПРОЕКТ - PROJECT-->
+    <record id="view_kro_project_form" model="ir.ui.view">
+        <field name="name">kro.project.form</field>
+        <field name="model">project.project</field>
+        <field name="priority" eval="256"/>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <field name="privacy_visibility" position="after">
+                <field name="project_id"/>
+                <field name="private"/>
+            </field>
+            <field name="use_tasks" position="replace">
+                <field name="use_tasks" invisible="1"/>
+            </field>
+            <notebook position="inside">
+                <page string="Дочерние проекты">
+                    <field name="project_ids" nolabel="1" widget="many2many_list" mode="tree" context="{'form_view_ref': 'kro.view_kro_project_form'}"/>
+                </page>
+                <page string="Проблемы">
+                    <field name="problem_ids" nolabel="1" widget="many2many_list" mode="tree" context="{'form_view_ref': 'kro.kro_problem_form'}"/>
+                </page>
+            </notebook>
+        </field>
+    </record>
+    <record id="view_kro_project_tree" model="ir.ui.view">
+        <field name="name">kro.project.tree</field>
+        <field name="model">project.project</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name" string="Название"/>
+                <field name="user_id"/>
+            </tree>
+        </field>
+    </record>
+    <record id="action_projects" model="ir.actions.act_window">
+        <field name="name">Проекты</field>
+        <field name="res_model">project.project</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Создайте новый проект.
+            </p>
+        </field>
+    </record>
+    <record id="action_project_tree" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="view_kro_project_tree"/>
+        <field name="act_window_id" ref="action_projects"/>
+    </record>
+    <record id="action_project_form" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_kro_project_form"/>
+        <field name="act_window_id" ref="action_projects"/>
+    </record>
+    <!--ПРОБЛЕМА - PROBLEM-->
+    <record id="kro_problem_form" model="ir.ui.view">
+        <field name="name">kro.problem.form</field>
+        <field name="model">kro.problem</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <field name="kanban_state" position="replace">
+                <field name="private"/>
+                <label for="private" string="Приватная"/>
+                <field name="planner" invisible="1"/>
+                <field name="obs" invisible="1"/>
+            </field>
+            <xpath expr="//sheet//h1" position="replace">
+                <h4 class="o_row">
+                    <field name="priority" widget="priority" nolabel="1"/>
+                </h4>
+                <h3>
+                    <field name="name" placeholder="Заголовок проблемы ..." nolabel="1" attrs="{'readonly': [('planner', '=', False)]}"/>
+                </h3>
+            </xpath>
+            <field name="user_id" position="replace">
+                <field name="user_id" attrs="{'readonly': [('planner', '=', False)]}"/>
+            </field>
+            <field name="planned_hours" position="replace">
+                <field name="planned_hours" attrs="{'readonly': [('planner', '=', False)]}"/>
+            </field>
+            <field name="date_deadline" position="replace">
+                <field name="date_deadline" attrs="{'readonly': [('planner', '=', False)]}"/>
+            </field>
+            <field name="tag_ids" position="replace">
+                <field name="tag_ids" invisible="1"/>
+            </field>
+            <field name="description" position="replace">
+                <field name="description" attrs="{'readonly': [('planner', '=', False)]}"/>
+            </field>
+            <field name="stage_id" position="replace">
+                <field name="state" widget="statusbar" clickable="True"/>
+                <field name="stage_id" widget="statusbar" clickable="True" options="{'fold_field': 'fold'}" invisible="1"/>
+            </field>
+            <field name="project_id" position="replace">
+                <field name="project_id" invisible="1"/>
+                <field name="kro_project_id" attrs="{'readonly': [('planner', '=', False)]}"/>
+                <field name="addressee_id" attrs="{'readonly': [('obs', '=', False),('planner', '=', False)]}"/>
+            </field>
+            <field name="date_deadline" position="before">
+                <field name="current_user_id" string="Ответственный"/>
+                <field name="create_date" string="Дата регистрации"/>
+            </field>
+            <field name="date_deadline" position="after">
+                <field name="fact_date" attrs="{'readonly': [('planner', '=', False)]}"/>
+            </field>
+            <field name="description" position="before">
+                <h2>
+                    <div style="width: 100%; float: left;">
+                        <div style="float: left; width: 33%;">
+                            <div style="margin: 10px; padding: 10px;">
+                                Симптомы
+                            </div>
+                        </div>
+                        <div style="float: left; width: 33%;">
+                            <div style="margin: 10px; padding: 10px;">
+                                Причины
+                            </div>
+                        </div>
+                        <div style="float: right; width: 33%;">
+                            <div style="margin: 10px; padding: 10px;">
+                                Последствия
+                            </div>
+                        </div>
+                    </div>
+                </h2>
+            </field>
+            <field name="description" position="after">
+                <h2>Решение и обоснование</h2>
+                <field name="decision" attrs="{'readonly': [('planner', '=', False)]}"/>
+                <div class="oe_clear" attrs="{'readonly': [('planner', '=', False)]}"/>
+            </field>
+            <field name="date_last_stage_update" position="after">
+                <field name="reason_aside_problem" attrs="{'readonly': [('planner', '=', False)]}"/>
+                <field name="reason_aside_aim" attrs="{'readonly': [('planner', '=', False)]}"/>
+                <field name="reason_aside_task" attrs="{'readonly': [('planner', '=', False)]}"/>
+                <field name="reason_correction" attrs="{'readonly': [('planner', '=', False)]}"/>
+            </field>
+            <page name="description_page" position="after">
+                <page string="Цели">
+                    <field name="aim_ids" nolabel="1" widget="many2many_list" mode="tree" context="{'form_view_ref': 'kro.kro_aim_form'}" attrs="{'readonly': [('planner', '=', False)]}"/>
+                </page>
+            </page>
+        </field>
+    </record>
+    <record id="kro_problem_tree" model="ir.ui.view">
+        <field name="name">kro.problem.tree.form</field>
+        <field name="model">kro.problem</field>
+        <field name="arch" type="xml">
+            <tree string="Проблемы">
+                <field name="name" string="Название"/>
+                <field name="state"/>
+                <field name="current_user_id"/>
+                <field name="addressee_id"/>
+                <field name="user_id"/>
+                <field name="kro_project_id"/>
+            </tree>
+        </field>
+    </record>
+    <record id="kro_problem_search_form" model="ir.ui.view">
+        <field name="name">kro.problem.search.form</field>
+        <field name="model">kro.problem</field>
+        <field name="arch" type="xml">
+            <search string="Проблемы">
+                <field name="name" string="Название"/>
+                <field name="state"/>
+                <field name="current_user_id"/>
+                <field name="addressee_id"/>
+                <field name="user_id"/>
+                <field name="kro_project_id"/>
+                <filter string="Мои проблемы" name="my_problems" domain="[('current_user_id','=',uid)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Проект" name="project" context="{'group_by':'project_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="kro_problem_gantt" model="ir.ui.view">
+        <field name="name">kro.problem.gantt</field>
+        <field name="model">kro.problem</field>
+        <field name="type">gantt8</field>
+        <field name="arch" type="xml">
+            <gantt8 date_start="date_start" date_stop="date_end" progress="progress" string="Tasks" default_group_by="project_id">
+            </gantt8>
+        </field>
+    </record>
+    <record id="action_problems" model="ir.actions.act_window">
+        <field name="name">Проблемы</field>
+        <field name="res_model">kro.problem</field>
+        <field name="view_mode">tree,form,calendar,gantt8</field>
+        <field name="context">{"search_default_my_problems":1}</field>
+        <field name="search_view_id" ref="kro_problem_search_form"/>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Создайте новую проблему.
+            </p>
+        </field>
+    </record>
+    <record id="action_kro_problem_tree" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="kro_problem_tree"/>
+        <field name="act_window_id" ref="action_problems"/>
+    </record>
+    <record id="action_kro_problem_form" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="kro_problem_form"/>
+        <field name="act_window_id" ref="action_problems"/>
+    </record>
+    <!--ЦЕЛЬ - AIM-->
+    <record id="kro_aim_form" model="ir.ui.view">
+        <field name="name">kro.aim.form</field>
+        <field name="model">kro.aim</field>
+        <field name="priority" eval="256" />
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <field name="kanban_state" position="replace">
+                <field name="private"/>
+                <label for="private" string="Приватная"/>
+            </field>
+            <field name="tag_ids" position="replace">
+                <field name="planned_hours"/>
+                <field name="total_time"/>
+                <field name="progress" widget="progressbar"/>
+            </field>
+            <field name="planned_hours" position="replace">
+                <field name="planned_hours" invisible="1"/>
+            </field>
+            <xpath expr="//sheet//h1" position="replace">
+                <h4 class="o_row">
+                    <field name="priority" widget="priority" nolabel="1"/>
+                    <span> Цель № </span>
+                    <field name="code"/>
+                </h4>
+                <h3>
+                    <field name="name" nolabel="1"/>
+                </h3>
+            </xpath>
+            <xpath expr="//sheet//group/group/field[@name='project_id']/../.." position="before">
+            </xpath>
+            <button name="toggle_active" position="before">
+                <button class="oe_stat_button" type="object" name="action_tasks" icon="fa-tasks" context="{'task_ids': task_ids}">
+                    <field string="Tasks" name="task_count" widget="statinfo" options="{'label_field': 'label_tasks'}"/>
+                </button>
+            </button>
+            <field name="stage_id" position="replace">
+                <field name="state" widget="statusbar" clickable="True"/>
+                <field name="stage_id" widget="statusbar" clickable="True" options="{'fold_field': 'fold'}" invisible="1"/>
+            </field>
+            <field name="date_deadline" position="replace">
+                <field name="date_deadline" invisible="1"/>
+            </field>
+            <field name="date_deadline" position="before">
+                <field name="date_start" readonly="1"/>
+                <field name="date_end" readonly="1"/>
+            </field>
+            <field name="sequence" position="before">
+                <field name="create_date" string="Дата регистрации"/>
+                <field name="write_date" string="Изменено"/>
+            </field>
+            <field name="project_id" position="replace">
+                <field name="project_id" attrs="{'invisible': [('problem_id', '!=', False),('project_id', '=', False)]}"/>
+                <field name="problem_project_id" attrs="{'invisible': [('problem_id', '=', False)]}"/>
+                <field name="problem_id" context="{'form_view_ref': 'kro.kro_problem_form'}" attrs="{'invisible': [('project_id', '!=', False)]}"/>
+                <field name="user_id"/>
+                <field name="current_user_id"/>
+            </field>
+            <page name="description_page" position="before">
+                <page string="Задачи">
+                    <field name="job_ids" nolabel="1" widget="many2many_list" mode="tree" context="{'form_view_ref': 'kro.kro_job_form'}">
+                        <tree string="Задачи">
+                            <field name="name"/>
+                            <field name="state"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                        </tree>
+                    </field>
+                </page>
+                <page string="Задания">
+                    <field name="task_ids" nolabel="1" widget="many2many_list" mode="tree" context="{'form_view_ref': 'project.view_task_form2'}">
+                        <tree string="Задания">
+                            <field name="name"/>
+                            <field name="state"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                        </tree>
+                    </field>
+                </page>
+            </page>
+            <field name="user_id" position="replace">
+                <field name="user_id" invisible="1"/>
+            </field>
+            <field name="date_last_stage_update" position="after">
+                <field name="reason_aside_problem"/>
+                <field name="reason_aside_aim"/>
+                <field name="reason_aside_task"/>
+                <field name="reason_correction"/>
+            </field>
+        </field>
+    </record>
+    <record id="kro_aims_tree" model="ir.ui.view">
+        <field name="name">kro.aim.tree</field>
+        <field name="model">kro.aim</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="code"/>
+                <field name="name" string="Название"/>
+                <field name="state"/>
+                <field name="current_user_id"/>
+                <field name="user_id"/>
+                <field name="problem_id"/>
+                <field name="project_id"/>
+            </tree>
+        </field>
+    </record>
+    <record id="kro_aims_search" model="ir.ui.view">
+        <field name="name">kro.aim.search</field>
+        <field name="model">kro.aim</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="name" string="Название"/>
+                <field name="state"/>
+                <field name="current_user_id"/>
+                <field name="user_id"/>
+                <field name="problem_id"/>
+                <field name="project_id"/>
+                <filter string="Мои цели" name="my_aims" domain="[('current_user_id','=',uid)]"/>
+            </search>
+        </field>
+    </record>
+    <record id="kro_aim_tasks" model="ir.ui.view">
+        <field name="name">project.task.search.form</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_tree2"/>
+        <field name="arch" type="xml">
+            <tree position="replace">
+                <tree decoration-info="job_id" decoration-danger="date_deadline and (date_deadline&lt;current_date)" string="Tasks">
+                    <field name="message_needaction" invisible="1"/>
+                    <field name="sequence" invisible="not context.get('seq_visible', False)"/>
+                    <field name="job_id"/>
+                    <field name="name"/>
+                    <field name="project_id" invisible="context.get('user_invisible', False)"/>
+                    <field name="user_id" invisible="context.get('user_invisible', False)"/>
+                    <field name="planned_hours" invisible="context.get('set_visible',False)" groups="project.group_time_work_estimation_tasks"/>
+                    <field name="date_deadline" invisible="context.get('deadline_visible',True)"/>
+                    <field name="stage_id" invisible="context.get('set_visible',False)"/>
+                </tree>
+            </tree>
+        </field>
+    </record>
+    <record id="kro_aims_gantt" model="ir.ui.view">
+        <field name="name">kro.aim.gantt</field>
+        <field name="model">kro.aim</field>
+        <field name="type">gantt8</field>
+        <field eval="2" name="priority"/>
+        <field name="arch" type="xml">
+            <gantt8 date_start="date_start" date_stop="date_end" progress="progress" string="Tasks" default_group_by="problem_id">
+            </gantt8>
+        </field>
+    </record>
+    <record id="kro_aims_task_search_form" model="ir.ui.view">
+        <field name="name">project.task.search.form</field>
+        <field name="model">project.task</field>
+        <field name="arch" type="xml">
+            <search string="Tasks">
+                <field name="stage_id"/>
+                <field name="id"/>
+                <field name="name"/>
+                <field name="tag_ids"/>
+                <field name="partner_id"/>
+                <field name="project_id"/>
+                <field name="user_id"/>
+                <group expand="1" string="Group By">
+                    <filter string="По задачам" name="job_id" context="{'group_by':'job_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="kro_aim_all_tasks" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="kro_aims_task_search_form"/>
+    </record>
+    <record id="action_aims" model="ir.actions.act_window">
+        <field name="name">Цели</field>
+        <field name="res_model">kro.aim</field>
+        <field name="view_mode">tree,calendar,form,gantt8</field>
+        <field name="context">{"search_default_my_aims":1}</field>
+        <field name="view_id" ref="kro_aims_tree"/>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Создайте новую цель.
+            </p>
+        </field>
+    </record>
+    <record id="action_aim_tree" model="ir.actions.act_window.view" >
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="kro_aims_tree"/>
+        <field name="act_window_id" ref="action_aims"/>
+    </record>
+    <record id="action_aim_form" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="kro_aim_form"/>
+        <field name="act_window_id" ref="action_aims"/>
+    </record>
+    <!--ЗАДАЧА - JOB-->
+    <record id="kro_job_form" model="ir.ui.view">
+        <field name="name">kro.job.form</field>
+        <field name="model">kro.job</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="active">True</field>
+        <field name="priority" eval="32"/>
+        <field name="arch" type="xml">
+            <field name="kanban_state" position="replace">
+                <field name="private"/>
+                <label for="private" string="Приватная"/>
+            </field>
+            <xpath expr="//sheet//h1" position="replace">
+                <h4 class="o_row">
+                    <field name="priority" widget="priority" nolabel="1"/>
+                    <span> Задача № </span>
+                    <field name="code" attrs="{'readonly': [('planner', '=', False)]}"/>
+                </h4>
+                <h3>
+                    <field name="name" placeholder="Заголовок задачи ..." nolabel="1" attrs="{'readonly': [('planner', '=', False)]}"/>
+                </h3>
+            </xpath>
+            <field name="tag_ids" position="replace">
+                <field name="planner" invisible="1"/>
+                <field name="obs" invisible="1"/>
+                <field name="tag_ids" invisible="1"/>
+                <field name="planned_hours" attrs="{'readonly': [('planner', '=', False)]}"/>
+                <field name="total_time" attrs="{'readonly': [('planner', '=', False)]}"/>
+                <field name="progress" widget="progressbar"/>
+            </field>
+            <field name="description" position="replace">
+                <field name="description" attrs="{'readonly': [('planner', '=', False)]}"/>
+            </field>
+            <field name="planned_hours" position="replace">
+                <field name="planned_hours" invisible="1"/>
+            </field>
+            <!--<field name="name" position="replace">-->
+                <!--<label string="Задача № " class="oe_inline"/>-->
+                <!--<field name="code" class="oe_inline" attrs="{'readonly': [('planner', '=', False)]}"/>-->
+                <!--<label string=" - " class="oe_inline"/>-->
+                <!--<field name="name" placeholder="Заголовок задачи ..."/>-->
+            <!--</field>-->
+            <page name='description_page' position="before">
+                <field name="message_needaction" invisible="1"/>
+                <page string="Задания">
+                    <field name="task_ids" nolabel="1" widget="one2many_list" mode="tree" context="{'message_needaction':False, 'form_view_ref': 'project.view_task_form2'}" attrs="{'readonly': [('planner', '=', False),('obs', '=', False)]}">
+                        <tree string="Задания">
+                            <field name="name"/>
+                            <field name="state"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                        </tree>
+                    </field>
+                </page>
+            </page>
+            <sheet position="before">
+                <header>
+                    <field name="state" widget="statusbar" clickable="True"/>
+                </header>
+            </sheet>
+            <field name="date_deadline" position="replace">
+                <field name="date_deadline" invisible="1"/>
+            </field>
+            <field name="date_deadline" position="before">
+                <field name="date_start" readonly="1"/>
+                <field name="date_end" readonly="1"/>
+            </field>
+            <field name="sequence" position="before">
+                <field name="create_date" string="Дата регистрации"/>
+                <field name="write_date" string="Изменено"/>
+            </field>
+            <field name="project_id" position="before">
+                <field name="current_user_id"/>
+            </field>
+            <field name="project_id" position="replace">
+                <field name="aim_project_id" attrs="{'invisible': [('aim_id', '=', False)]}"/>
+                <field name="project_id" attrs="{'invisible': [('problem_id', '=', False)]}"/>
+                <field name="problem_id" context="{'form_view_ref': 'kro.kro_problem_form'}" attrs="{'invisible': [('problem_id', '=', False)]}"/>
+                <field name="aim_id" context="{'form_view_ref': 'kro.kro_aim_form'}" attrs="{'readonly': [('planner', '=', False)]}"/>
+            </field>
+             <field name="user_id" position="replace">
+                 <field name="user_id" attrs="{'readonly': [('planner', '=', False)]}"/>
+             </field>
+            <field name="date_last_stage_update" position="after">
+                <field name="reason_aside_problem" attrs="{'readonly': [('planner', '=', False)]}"/>
+                <field name="reason_aside_aim" attrs="{'readonly': [('planner', '=', False)]}"/>
+                <field name="reason_aside_task" attrs="{'readonly': [('planner', '=', False)]}"/>
+                <field name="reason_correction" attrs="{'readonly': [('planner', '=', False)]}"/>
+            </field>
+        </field>
+    </record>
+    <record id="kro_jobs_tree" model="ir.ui.view">
+        <field name="name">kro.job.tree</field>
+        <field name="model">kro.job</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="code"/>
+                <field name="name" string="Название"/>
+                <field name="state"/>
+                <field name="project_id"/>
+                <field name="problem_id"/>
+                <field name="aim_id"/>
+                <field name="current_user_id"/>
+                <field name="user_id"/>
+            </tree>
+        </field>
+    </record>
+    <record id="kro_jobs_search" model="ir.ui.view">
+        <field name="name">kro.job.search</field>
+        <field name="model">kro.job</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="name" string="Название"/>
+                <field name="state"/>
+                <field name="project_id"/>
+                <field name="problem_id"/>
+                <field name="aim_id"/>
+                <field name="current_user_id"/>
+                <field name="user_id"/>
+                <filter string="Мои задачи" name="my_jobs" domain="[('current_user_id','=',uid)]"/>
+            </search>
+        </field>
+    </record>
+    <record id="kro_jobs_gantt" model="ir.ui.view">
+        <field name="name">kro.job.gantt</field>
+        <field name="model">kro.job</field>
+        <field name="type">gantt8</field>
+        <field eval="2" name="priority"/>
+        <field name="arch" type="xml">
+            <gantt8 date_start="date_start" date_stop="date_end" progress="progress" string="Tasks" default_group_by="aim_id">
+            </gantt8>
+        </field>
+    </record>
+    <record id="action_job" model="ir.actions.act_window">
+        <field name="name">Задачи</field>
+        <field name="res_model">kro.job</field>
+        <field name="view_mode">tree,form,calendar,gantt8</field>
+        <field name="context">{"search_default_my_jobs":1}</field>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Создайте новую задачу.
+            </p>
+        </field>
+    </record>
+    <record id="action_job_tree" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2"/>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="kro_jobs_tree"/>
+        <field name="act_window_id" ref="action_job"/>
+    </record>
+    <record id="action_job_form" model="ir.actions.act_window.view">
+        <field name="sequence" eval="3"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="kro_job_form"/>
+        <field name="act_window_id" ref="action_job"/>
+    </record>
+    <!--ЗАДАНИЕ - TASK-->
+    <record id="view_task_form" model="ir.ui.view">
+        <field name="name">project.task.form</field>
+        <field name="model">project.task</field>
+        <field eval="258" name="priority"/>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <field name="kanban_state" position="replace">
+                <field name="executor" invisible="1"/>
+                <field name="predicator" invisible="1"/>
+                <field name="approver" invisible="1"/>
+                <field name="planner" invisible="1"/>
+                <field name="admin" invisible="1"/>
+                <field name="private"/>
+                <label for="private" string="Приватное"/>
+            </field>
+            <xpath expr="//sheet//h1" position="replace">
+                <h4 class="o_row">
+                    <field name="priority" widget="priority" nolabel="1"/>
+                    <span> Задание № </span>
+                    <field name="code" attrs="{'readonly': [('planner', '=', False)]}"/>
+                </h4>
+                <h3>
+                    <field name="name" placeholder="Заголовок задания ..." nolabel="1" attrs="{'readonly': [('planner', '=', False)]}"/>
+                </h3>
+            </xpath>
+            <button name="toggle_active" position="before">
+                <button class="oe_stat_button" name="attachment_tree_view" type="object" icon="fa-files-o">
+                    <field string="Документы" name="doc_count" widget="statinfo"/>
+                </button>
+                <button class="oe_stat_button" type="object" name="action_move_time" icon="fa-clock-o" string="Пересчитать связанные"/>
+            </button>
+            <xpath expr="//sheet//group/group/field[@name='tag_ids']/../.." position="replace">
+                <group>
+                    <field name="current_user_id"/>
+                    <field name="project_id" invisible="1"/>
+                    <field name="parent_project_id" invisible="1"/>
+                    <field name="analytic_account_id" invisible="1"/>
+                    <field name="problem_project_id" attrs="{'invisible': ['|',('problem_id', '=', False),('aim_project_id', '!=', False)]}"/>
+                    <field name="aim_project_id" attrs="{'invisible': [('aim_project_id', '=', False)]}"/>
+                    <field name="problem_id" context="{'form_view_ref': 'kro.kro_problem_form'}" attrs="{'invisible': [('problem_id', '=', False)]}"/>
+                    <!--<field name="aim_id" context="{'form_view_ref': 'kro.kro_aim_form'}" attrs="{'invisible': ['|',('job_aim_id', '!=', False),('aim_id', '=', False)]}"/>-->
+                    <!--<field name="job_aim_id" context="{'form_view_ref': 'kro.kro_aim_form'}" attrs="{'invisible': ['|',('job_aim_id', '=', False),('aim_id', '!=', False)],'readonly': [('planner', '=', False)]}"/>-->
+                    <field name="aim_id" context="{'form_view_ref': 'kro.kro_aim_form'}" attrs="{'invisible': ['|',('job_aim_id', '!=', False)],'readonly': [('planner', '=', False)]}"/>
+                    <field name="job_aim_id" context="{'form_view_ref': 'kro.kro_aim_form'}" attrs="{'invisible': [('job_id', '=', False)]}"/>
+                    <field name="job_id" context="{'form_view_ref': 'kro.kro_job_form'}" attrs="{'readonly': [('planner', '=', False)]}"/>
+                </group>
+                <group>
+                    <group>
+                        <field name="create_date" string="Дата создания"/>
+                        <field name="user_id" string="Ответственный за планирование" attrs="{'readonly': [('planner', '=', False)]}"/>
+                        <field name="planned_hours"/>
+                        <field name="progress"/>
+                    </group>
+                    <group>
+                        <field name="amount" attrs="{'readonly': [('planner', '=', False)]}"/>
+                        <field name="mark_state" attrs="{'readonly': [('planner', '=', False),('admin', '=', False)]}"/>
+                        <field name="mark_result" attrs="{'readonly': [('planner', '=', False),('admin', '=', False)]}"/>
+                        <field name="got_approver" attrs="{'readonly': [('planner', '=', False)]}"/>
+                    </group>
+                </group>
+            </xpath>
+            <field name="stage_id" position="replace">
+                <!--<field name="state" widget="statusbar" attrs="{'clickable': [('planner', '=', True),('admin', '=', True)]}"/>-->
+                <field name="state" widget="statusbar" clickable="True"/>
+                <field name="stage_id" widget="statusbar" clickable="True" options="{'fold_field': 'fold'}" invisible="1"/>
+                <field name="message_needaction" invisible="1"/>
+            </field>
+            <field name="partner_id" position="after">
+                <!--<field name="date_start" readonly="1"/>-->
+                <field name="date_end" readonly="1"/>
+            </field>
+            <page name="description_page" position='after'>
+                <page name="depend_on_ids" string='Предыдущие'>
+                    <field name="depend_on_ids" nolabel="1" widget="many2many_list" mode="tree" context="{'form_view_ref': 'project.view_task_form2'}" attrs="{'readonly': [('planner', '=', False),('admin', '=', False)]}"/>
+                </page>
+                <page name="dependent_ids" string='Следующие'>
+                    <field name="dependent_ids" nolabel="1" widget="many2many_list" mode="tree" context="{'form_view_ref': 'project.view_task_form2'}" attrs="{'readonly': [('planner', '=', False),('admin', '=', False)]}"/>
+                </page>
+            </page>
+            <notebook position="before">
+                <group col="3">
+                    <group col="1">
+                        <h3>Исполнитель</h3>
+                        <hr style="margin-top: 0;margin-bottom: 0;"/>
+                        <div col="2">
+                            <field name="user_executor_id" attrs="{'readonly': [('planner', '=', False)]}"/>
+                        </div>
+                        <div col="2">
+                            <span style="font-weight: bold;">Согласовал </span>
+                            <field name="approved_by_executor" attrs="{'readonly': [('executor', '=', False)]}"/>
+                        </div>
+                        <div col="2">
+                            <span style="font-weight: bold;">Дата начала: </span>
+                            <field name="date_start" attrs="{'readonly': [('executor', '=', False)]}"/>
+                        </div>
+                        <div col="2">
+                            <span style="font-weight: bold;">Дата завершения: </span>
+                            <field name="date_end_ex" attrs="{'readonly': [('executor', '=', False)]}"/>
+                        </div>
+                        <div col="2">
+                            <span style="font-weight: bold;">Оценка времени: </span>
+                            <field name="plan_time_ex" widget="float_time"  attrs="{'readonly': [('executor', '=', False)]}"/>
+                        </div>
+                    </group>
+                    <group col="1">
+                        <h3>Утверждающий</h3>
+                        <hr style="margin-top: 0;margin-bottom: 0;"/>
+                        <div col="2">
+                            <field name="user_predicator_id" attrs="{'readonly': [('planner', '=', False)]}"/>
+                        </div>
+                        <div col="2">
+                            <span style="font-weight: bold;">Согласовал </span>
+                            <field name="approved_by_predicator" attrs="{'readonly': [('predicator', '=', False)]}"/>
+                        </div>
+                        <div col="2">
+                            <span style="font-weight: bold;">Дата начала: </span>
+                            <field name="date_start_pr" attrs="{'readonly': [('predicator', '=', False)]}"/>
+                        </div>
+                        <div col="2">
+                            <span style="font-weight: bold;">Дата завершения: </span>
+                            <field name="date_end_pr" attrs="{'readonly': [('predicator', '=', False)]}"/>
+                        </div>
+                        <div col="2">
+                            <span style="font-weight: bold;">Оценка времени: </span>
+                            <field name="plan_time_pr" widget="float_time" attrs="{'readonly': [('predicator', '=', False)]}"/>
+                        </div>
+                    </group>
+                    <group col="1" attrs="{'invisible': [('got_approver', '=', False)]}">
+                        <h3>Подтверждающий</h3>
+                        <hr style="margin-top: 0;margin-bottom: 0;"/>
+                        <div col="2">
+                            <field name="user_approver_id" attrs="{'readonly': [('planner', '=', False)]}"/>
+                        </div>
+                        <div col="2">
+                            <span style="font-weight: bold;">Согласовал </span>
+                            <field name="approved_by_approver" attrs="{'readonly': [('approver', '=', False)]}"/>
+                        </div>
+                        <div col="2">
+                            <span style="font-weight: bold;">Дата начала: </span>
+                            <field name="date_start_ap" attrs="{'readonly': [('approver', '=', False)]}"/>
+                        </div>
+                        <div col="2">
+                            <span style="font-weight: bold;">Дата завершения: </span>
+                            <field name="date_end_ap" attrs="{'readonly': [('approver', '=', False)]}"/>
+                        </div>
+                        <div col="2">
+                            <span style="font-weight: bold;">Оценка времени: </span>
+                            <field name="plan_time_ap" widget="float_time" attrs="{'readonly': [('approver', '=', False)]}"/>
+                        </div>
+                    </group>
+                </group>
+            </notebook>
+            <field name="description" position="replace">
+                <field name="description"  attrs="{'readonly': [('planner', '=', False)]}"/>
+            </field>
+            <field name="description" position="after">
+                <h3>Требуемый результат + способ  его измерения</h3>
+                <field name="required_result"  attrs="{'readonly': [('planner', '=', False)]}"/>
+            </field>
+        </field>
+    </record>
+    <record id="view_task_tree" model="ir.ui.view">
+        <field name="name">project.task.tree</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_tree2"/>
+        <field name="arch" type="xml">
+            <tree position="replace">
+                <tree string="Задания">
+                    <field name="job_id" string="Задача"/>
+                    <field name="name" string="Задание"/>
+                    <field name="state"/>
+                    <field name="current_user_id" string="Ответственный"/>
+                    <field name="user_id" string="Планирующий"/>
+                    <field name="date_start"/>
+                    <field name="date_end"/>
+                    <field name="progress"/>
+                </tree>
+            </tree>
+        </field>
+    </record>
+    <record id="view_task_search_form" model="ir.ui.view">
+        <field name="name">project.task.search.form</field>
+        <field name="model">project.task</field>
+        <field name="arch" type="xml">
+            <search string="Tasks">
+                <field name="name" string="Tasks"/>
+                <field name="tag_ids"/>
+                <field name="partner_id"/>
+                <field name="problem_project_id"/>
+                <field name="parent_project_id" invisible="1"/>
+                <field name="user_id"/>
+                <field name="stage_id"/>
+                <filter string="Мои задания" name="my_tasks" domain="[('current_user_id','=',uid)]"/>
+                <filter string="Я участник" name="i_participant" domain="['|','|','|',('user_id','=',uid),('user_executor_id','=',uid),('user_predicator_id','=',uid),('user_approver_id','=',uid)]"/>
+                <filter string="Не назначены" name="unassigned" domain="[('user_id', '=', False)]"/>
+                <filter string="Новые" name="draft" domain="[('stage_id.sequence', '&lt;=', 1)]"/>
+                <filter string="Архив" name="inactive" domain="[('active','=',False)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Проект" name="project" context="{'group_by':'project_id'}"/>
+                    <filter string="Задача" context="{'group_by':'job_id'}"/>
+                    <filter string="Статус" name="Stage" context="{'group_by':'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="kro_task_gantt" model="ir.ui.view">
+        <field name="name">kro.job.gantt</field>
+        <field name="model">project.task</field>
+        <field name="type">gantt8</field>
+        <field eval="2" name="priority"/>
+        <field name="arch" type="xml">
+            <gantt8 date_start="date_start" date_stop="date_end" progress="progress" string="Tasks" default_group_by="job_id">
+            </gantt8>
+        </field>
+    </record>
+    <record id="kro_actions_view_taskss" model="ir.actions.act_window">
+        <field name="name">Задания</field>
+        <field name="res_model">project.task</field>
+        <field name="view_mode">gantt8,form,calendar,pivot,graph,tree</field>
+        <field name="view_id" ref="kro_task_gantt"/>
+        <field name="search_view_id" ref="view_task_search_form"/>
+        <field name="help" type="html">
+            <p>
+                Задания
+            </p>
+        </field>
+    </record>
+    <record id="kro_actions_view_taskss_tree" model="ir.actions.act_window">
+        <field name="name">Задания</field>
+        <field name="res_model">project.task</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_task_tree"/>
+        <field name="search_view_id" ref="view_task_search_form"/>
+        <field name="context">{"search_default_my_tasks":1}</field>
+    </record>
+    <record id="view_calendar_form" model="ir.ui.view">
+        <field name="name">calendar.event.inherit</field>
+        <field name="model">calendar.event</field>
+        <field name="inherit_id" ref="calendar.view_calendar_event_form"/>
+        <field name="arch" type="xml">
+            <sheet position="before">
+                <header>
+                    <field name="state" widget="statusbar" clickable="True"/>
+                </header>
+            </sheet>
+            <field name="partner_ids" position="after">
+                <group>
+                    <group>
+                        <field name="user_id" string="Модератор"/>
+                        <field name="approver_id"/>
+                        <field name="user_plan_id"/>
+                    </group>
+                </group>
+            </field>
+            <notebook position="inside">
+                <page name="bound" string="Связи">
+                    <group>
+                        <group>
+                            <field name="project_id"/>
+                            <field name="problem_id"/>
+                            <field name="aim_id"/>
+                            <field name="task_id"/>
+                        </group>
+                    </group>
+                </page>
+            </notebook>
+            <label for="description" position="replace"></label>
+            <field name="description" position="replace">
+                <h3>Цели обсуждения</h3>
+                <field name="description"/>
+                <h3>Требуемые результаты</h3>
+                <field name="expectations"/>
+            </field>
+        </field>
+    </record>
+    <record id="action_task_tree" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="view_task_tree"/>
+    </record>
+    <record id="action_task_gantt" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">gantt</field>
+        <field name="view_id" ref="kro_task_gantt"/>
+        <field name="act_window_id" ref="kro_actions_view_taskss"/>
+    </record>
+    <record id="project_gantt" model="ir.ui.view">
+        <field name="name">project.gantt8_view_task_form2.inherit</field>
+        <field name="model">project.task</field>
+        <field eval="258" name="priority"/>
+        <field name="inherit_id" ref="project_gantt8.gantt8_view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet//group/field[@name='date_start']/.." position="replace">
+            </xpath>
+        </field>
+    </record>
+    <!--ПРЯЧЕМ МЕНЮ-->
+    <record id="make_invisible" model="res.groups">
+        <field name="name">Invisible</field>
+    </record>
+    <record model="ir.ui.menu" id="project.menu_tasks_config">
+        <field name="groups_id" eval="[(6,0,[ref('kro.make_invisible')])]"/>
+    </record>
+    <record model="ir.ui.menu" id="project.menu_project_management">
+        <field name="groups_id" eval="[(6,0,[ref('kro.make_invisible')])]"/>
+    </record>
+    <record model="ir.ui.menu" id="project.menu_project_tags_act">
+        <field name="groups_id" eval="[(6,0,[ref('kro.make_invisible')])]"/>
+    </record>
+    <record model="ir.ui.menu" id="project.menu_projects_config">
+        <field name="groups_id" eval="[(6,0,[ref('kro.make_invisible')])]"/>
+    </record>
+    <record model="ir.ui.menu" id="project.menu_projects">
+        <field name="groups_id" eval="[(6,0,[ref('kro.make_invisible')])]"/>
+    </record>
+    <!--МЕНЮ-->
+    <menuitem id="project.menu_project_config" name="Configuration" parent="base.menu_main_pm" sequence="100" groups="project.group_project_manager,group_adm_bp,group_project_aim,group_project_obs,group_project_obs_max"/>
+    <menuitem id="base.menu_project_general_settings" name="Settings" parent="project.menu_project_config" sequence="0" action="project.action_config_settings" groups="base.group_configuration"/>
+    <menuitem action="project.open_view_project_all_config" id="project.menu_projects_config" name="Projects" parent="project.menu_project_config" sequence="10" groups="base.group_configuration"/>
+    <menuitem id="project.menu_tasks_config" name="GTD" parent="project.menu_project_config" sequence="2" groups="base.group_configuration"/>
+    <menuitem id='menu_kro_projects' action="action_projects" name="Проекты" parent="project.menu_project_config" sequence="1" groups="project.group_project_manager,group_adm_bp,group_project_aim,group_project_obs,group_project_obs_max"/>
+    <menuitem id='menu_kro_problems' action="action_problems" name="Проблемы" parent="kro_proj_menu" sequence="2" groups="project.group_project_manager,group_adm_bp,group_project_aim,group_project_obs,group_project_obs_max"/>
+    <menuitem id='menu_kro_aims' action="action_aims" name="Цели" parent="kro_proj_menu" sequence="3" groups="project.group_project_manager,group_adm_bp,group_project_aim,group_project_obs,group_project_obs_max"/>
+    <menuitem id='menu_kro_jobs' action="action_job" name="Задачи" parent="kro_proj_menu" sequence="4" groups="project.group_project_manager,group_adm_bp,group_project_aim,group_project_obs,group_project_obs_max"/>
+    <menuitem id='menu_kro_tasks' action="kro_actions_view_taskss" string="Задания" name="Задания" parent="kro_proj_menu" sequence="5"/>
+    <menuitem id='menu_kro_tasks_tree' action="kro_actions_view_taskss_tree" string="Задания-список" name="Задания-список" parent="kro_proj_menu" sequence="6"/>
+    <menuitem id="base.menu_main_pm" groups="project.group_project_manager,project.group_project_user,group_adm_bp,group_project_aim,group_project_obs,group_project_obs_max"/>
+</data>
+</odoo>

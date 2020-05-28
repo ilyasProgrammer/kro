@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+
+    <t t-extend="mail.Followers.add_more">
+        <t t-jquery="li.o_add_follower" t-operation="after">
+            <li class="o_add_group_follower">
+                <a href="#"> Добавить группу </a>
+            </li>
+        </t>
+    </t>
+
+</templates>

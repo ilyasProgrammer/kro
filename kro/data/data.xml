@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data>
+    <record id="mt_problem_new" model="mail.message.subtype">
+        <field name="name">Problem opened</field>
+        <field name="res_model">kro.problem</field>
+        <field name="default" eval="True"/>
+        <field name="hidden" eval="False"/>
+        <field name="description">Problem opened</field>
+    </record>
+    <record id="mt_aim_new" model="mail.message.subtype">
+        <field name="name">Aim opened</field>
+        <field name="res_model">kro.aim</field>
+        <field name="default" eval="True"/>
+        <field name="hidden" eval="False"/>
+        <field name="description">Aim opened</field>
+    </record>
+    <record id="mt_job_new" model="mail.message.subtype">
+        <field name="name">Job opened</field>
+        <field name="res_model">kro.job</field>
+        <field name="default" eval="True"/>
+        <field name="hidden" eval="False"/>
+        <field name="description">Job opened</field>
+    </record>
+    <record id="mail.mail_template_data_notification_email_kro_job" model="mail.template">
+        <field name="name">Оповещение</field>
+        <field name="subject">
+            ${object.subject or (object.record_name and 'Re: %s' % object.record_name) or (object.parent_id and object.parent_id.subject and 'Re: %s' % object.parent_id.subject) or (object.parent_id and object.parent_id.record_name and 'Re: %s' % object.parent_id.record_name)}
+        </field>
+        <field name="model_id" ref="mail.model_mail_message"/>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div itemscope itemtype="http://schema.org/EmailMessage">
+    <div itemprop="potentialAction" itemscope itemtype="http://schema.org/ViewAction">
+        % if ctx.get('button_access'):
+        <link itemprop="target" href="${ctx['button_access']['url']}"/>
+        <link itemprop="url" href="${ctx['button_access']['url']}"/>
+        % endif
+        <meta itemprop="name" content="View ${ctx['model_name']}"/>
+    </div>
+</div>
+<div summary="o_mail_notification" style="padding:0px; width:600px; margin:0 auto; background: #FFFFFF repeat top /100%; color:#777777">
+    <table cellspacing="0" cellpadding="0" style="width:600px; border-collapse:collapse; background:inherit; color:inherit">
+        <tbody><tr>
+            <td valign="center" width="270" style="padding:5px 10px 5px 5px;font-size: 30px">
+                % if ctx.get('button_access'):
+                <a href="${ctx['button_access']['url']}" style="-webkit-user-select: none; padding: 5px 10px; font-size: 12px; line-height: 18px; color: #FFFFFF; border-color:#a24689; text-decoration: none; display: inline-block; margin-bottom: 0px; font-weight: 400; text-align: center; vertical-align: middle; cursor: pointer; white-space: nowrap; background-image: none; background-color: #a24689; border: 1px solid #a24689; border-radius:3px" class="o_default_snippet_text">${ctx['button_access']['title']}</a>
+                % endif
+            </td>
+            <td valign="center" align="right" width="270" style="padding:5px 15px 5px 10px; font-size: 12px;">
+                <p>
+                <strong>Sent by</strong>
+                % if ctx.get('website_url'):
+                <a href="${ctx['website_url']}" style="text-decoration:none; color: #a24689;">
+                % endif
+                <strong>${ctx.get('company_name')}</strong>
+                % if ctx.get('website_url'):
+                </a>
+                % endif
+                <strong>using</strong>
+                <a href="https://www.odoo.com" style="text-decoration:none; color: #a24689;"><strong>Odoo</strong></a>
+                </p>
+            </td>
+        </tr>
+    </tbody></table>
+</div>
+<div style="padding:0px; width:600px; margin:0 auto; background: #FFFFFF repeat top /100%; color:#777777">
+    <table cellspacing="0" cellpadding="0" style="vertical-align:top; padding:0px; border-collapse:collapse; background:inherit; color:inherit">
+        <tbody><tr>
+            <td valign="top" style="width:600px; padding:5px 10px 5px 5px;">
+                <div>
+                    <hr width="100%" style="background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0;margin:15px auto;padding:0">
+                </div>
+            </td>
+        </tr></tbody>
+    </table>
+</div>
+<div style="padding:0px; width:600px; margin:0 auto; background: #FFFFFF repeat top /100%;color:#777777">
+    <table cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto; width:600px; border-collapse:collapse; background:inherit; color:inherit">
+        <tbody><tr>
+            <td style="padding:5px 10px 5px 5px;font-size: 14px;">
+                ${object.body | safe}
+                % if ctx.get('tracking'):
+                    <ul>
+                    % for tracking in ctx['tracking']
+                        <li>${tracking[0]} : ${tracking[1]} -&gt; ${tracking[2]}</li>
+                    % endfor
+                    </ul>
+                % endif
+            </td>
+        </tr></tbody>
+    </table>
+</div>
+% if ctx.get('signature'):
+<div style="padding:0px; width:600px;margin:0 auto; background: #FFFFFF repeat top /100%;color:#777777">
+    <table cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto; width:600px; border-collapse:collapse; background:inherit; color:inherit">
+        <tbody><tr>
+            <td style="padding:5px 10px 5px 5px;font-size: 14px; text-align: left;">
+                ${ctx['signature'] | safe}
+            </td>
+        </tr></tbody>
+    </table>
+</div>
+% endif
+]]></field>
+    </record>
+
+</data>
+</odoo>

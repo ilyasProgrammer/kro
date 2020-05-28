@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+        <record id="sequence_aim" model="ir.sequence">
+            <field name="name">Aim code</field>
+            <field name="code">kro.aim</field>
+            <field eval="4" name="padding" />
+            <field name="prefix"></field>
+        </record>
+        <record id="sequence_job" model="ir.sequence">
+            <field name="name">Job code</field>
+            <field name="code">kro.job</field>
+            <field eval="4" name="padding" />
+            <field name="prefix"></field>
+        </record>
+
+</odoo>
