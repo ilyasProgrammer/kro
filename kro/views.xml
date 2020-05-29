@@ -180,19 +180,19 @@
             </search>
         </field>
     </record>
-    <record id="kro_problem_gantt" model="ir.ui.view">
-        <field name="name">kro.problem.gantt</field>
-        <field name="model">kro.problem</field>
-        <field name="type">gantt8</field>
-        <field name="arch" type="xml">
-            <gantt8 date_start="date_start" date_stop="date_end" progress="progress" string="Tasks" default_group_by="project_id">
-            </gantt8>
-        </field>
-    </record>
+<!--    <record id="kro_problem_gantt" model="ir.ui.view">-->
+<!--        <field name="name">kro.problem.gantt</field>-->
+<!--        <field name="model">kro.problem</field>-->
+<!--        <field name="type">gantt8</field>-->
+<!--        <field name="arch" type="xml">-->
+<!--            <gantt8 date_start="date_start" date_stop="date_end" progress="progress" string="Tasks" default_group_by="project_id">-->
+<!--            </gantt8>-->
+<!--        </field>-->
+<!--    </record>-->
     <record id="action_problems" model="ir.actions.act_window">
         <field name="name">Проблемы</field>
         <field name="res_model">kro.problem</field>
-        <field name="view_mode">tree,form,calendar,gantt8</field>
+        <field name="view_mode">tree,form,calendar</field>
         <field name="context">{"search_default_my_problems":1}</field>
         <field name="search_view_id" ref="kro_problem_search_form"/>
         <field name="help" type="html">
@@ -355,16 +355,16 @@
             </tree>
         </field>
     </record>
-    <record id="kro_aims_gantt" model="ir.ui.view">
-        <field name="name">kro.aim.gantt</field>
-        <field name="model">kro.aim</field>
-        <field name="type">gantt8</field>
-        <field eval="2" name="priority"/>
-        <field name="arch" type="xml">
-            <gantt8 date_start="date_start" date_stop="date_end" progress="progress" string="Tasks" default_group_by="problem_id">
-            </gantt8>
-        </field>
-    </record>
+<!--    <record id="kro_aims_gantt" model="ir.ui.view">-->
+<!--        <field name="name">kro.aim.gantt</field>-->
+<!--        <field name="model">kro.aim</field>-->
+<!--        <field name="type">gantt8</field>-->
+<!--        <field eval="2" name="priority"/>-->
+<!--        <field name="arch" type="xml">-->
+<!--            <gantt8 date_start="date_start" date_stop="date_end" progress="progress" string="Tasks" default_group_by="problem_id">-->
+<!--            </gantt8>-->
+<!--        </field>-->
+<!--    </record>-->
     <record id="kro_aims_task_search_form" model="ir.ui.view">
         <field name="name">project.task.search.form</field>
         <field name="model">project.task</field>
@@ -538,20 +538,10 @@
             </search>
         </field>
     </record>
-    <record id="kro_jobs_gantt" model="ir.ui.view">
-        <field name="name">kro.job.gantt</field>
-        <field name="model">kro.job</field>
-        <field name="type">gantt8</field>
-        <field eval="2" name="priority"/>
-        <field name="arch" type="xml">
-            <gantt8 date_start="date_start" date_stop="date_end" progress="progress" string="Tasks" default_group_by="aim_id">
-            </gantt8>
-        </field>
-    </record>
     <record id="action_job" model="ir.actions.act_window">
         <field name="name">Задачи</field>
         <field name="res_model">kro.job</field>
-        <field name="view_mode">tree,form,calendar,gantt8</field>
+        <field name="view_mode">tree,form,calendar</field>
         <field name="context">{"search_default_my_jobs":1}</field>
         <field name="help" type="html">
             <p class="oe_view_nocontent_create">
@@ -777,21 +767,11 @@
             </search>
         </field>
     </record>
-    <record id="kro_task_gantt" model="ir.ui.view">
-        <field name="name">kro.job.gantt</field>
-        <field name="model">project.task</field>
-        <field name="type">gantt8</field>
-        <field eval="2" name="priority"/>
-        <field name="arch" type="xml">
-            <gantt8 date_start="date_start" date_stop="date_end" progress="progress" string="Tasks" default_group_by="job_id">
-            </gantt8>
-        </field>
-    </record>
     <record id="kro_actions_view_taskss" model="ir.actions.act_window">
         <field name="name">Задания</field>
         <field name="res_model">project.task</field>
-        <field name="view_mode">gantt8,form,calendar,pivot,graph,tree</field>
-        <field name="view_id" ref="kro_task_gantt"/>
+        <field name="view_mode">tree,calendar,pivot,graph,form</field>
+        <field name="view_id" ref="view_task_tree"/>
         <field name="search_view_id" ref="view_task_search_form"/>
         <field name="help" type="html">
             <p>
@@ -851,22 +831,6 @@
         <field name="sequence" eval="1"/>
         <field name="view_mode">tree</field>
         <field name="view_id" ref="view_task_tree"/>
-    </record>
-    <record id="action_task_gantt" model="ir.actions.act_window.view">
-        <field name="sequence" eval="1"/>
-        <field name="view_mode">gantt</field>
-        <field name="view_id" ref="kro_task_gantt"/>
-        <field name="act_window_id" ref="kro_actions_view_taskss"/>
-    </record>
-    <record id="project_gantt" model="ir.ui.view">
-        <field name="name">project.gantt8_view_task_form2.inherit</field>
-        <field name="model">project.task</field>
-        <field eval="258" name="priority"/>
-        <field name="inherit_id" ref="project_gantt8.gantt8_view_task_form2"/>
-        <field name="arch" type="xml">
-            <xpath expr="//sheet//group/field[@name='date_start']/.." position="replace">
-            </xpath>
-        </field>
     </record>
     <!--ПРЯЧЕМ МЕНЮ-->
     <record id="make_invisible" model="res.groups">

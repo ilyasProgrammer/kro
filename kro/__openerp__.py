@@ -10,7 +10,7 @@
         'project',
         'calendar',
         # 'reminder_task_deadline',
-        'project_gantt8',
+        # 'project_gantt8',
         'project_timesheet',
         'mail',
         'document_page',

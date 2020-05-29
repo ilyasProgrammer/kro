@@ -5,14 +5,9 @@
     'author': "Ilyas",
     'website': "https://github.com/ilyasProgrammer",
     'category': 'Project',
-    'version': '1.0',
-    'depends': [
-        'kro',
-                ],
-    'data': [
-    ],
-    'demo': [
-    ],
+    'version': '2.0',
+    'depends': ['kro'],
+    'data': ['cron.xml'],
     'installable': True,
     'application': True,
     'auto_install': False,
