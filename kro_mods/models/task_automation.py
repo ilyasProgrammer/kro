@@ -36,11 +36,11 @@ class TaskMod(models.Model):
                     msg_text = u"Прошу вывести задание из планирования или, если задание не актуально, то его завершить."
                     subject = u"Планирование > 31 дня"
                     rec.notifications_history += '%s\tPLAN 1 note\n' % str(now)
-                elif date_diff > 34 and 'PLAN 2 note' not in rec.notifications_history:
+                elif rec.get_note_period(now, 'PLAN 1 note') > 3 and 'PLAN 2 note' not in rec.notifications_history:
                     subject = u"Планирование > 34 дней"
                     msg_text = u"При отсутствии ответа в течении 3х дней, с момента получения письма, задание автоматически перейдет в статус завершено."
                     rec.notifications_history += '%s\tPLAN 2 note\n' % str(now)
-                elif date_diff > 40 and 'PLAN 3 note' not in rec.notifications_history:
+                elif rec.get_note_period(now, 'PLAN 2 note') > 3 and 'PLAN 3 note' not in rec.notifications_history:
                     subject = u"Планирование > 40 дней"
                     msg_text = u"Задание завершено."
                     rec.notifications_history += '%s\tPLAN 3 note\n' % str(now)
