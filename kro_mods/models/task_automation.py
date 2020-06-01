@@ -14,7 +14,8 @@ class TaskMod(models.Model):
     @api.model
     def cron_task_automation(self):
         # plan = self.env['project.task'].search([('state', '=', 'plan')])
-        plan = self.env['project.task'].search([('state', '=', 'plan'), ('user_id', 'in', [43, 98, 91, 66, 149])])
+        # plan = self.env['project.task'].search([('state', '=', 'plan'), ('user_id', 'in', [43, 98, 91, 66, 149])])
+        plan = self.env['project.task'].search([('state', '=', 'plan'), ('user_id', 'in', [66])])
         plan.process_plan_tasks()
 
     @api.multi
