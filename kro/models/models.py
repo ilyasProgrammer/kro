@@ -488,7 +488,7 @@ class Task(models.Model):
     # date_start_ex = fields.Datetime(u'Старт') используем date_start для гантта
     code = fields.Char(string=u'Номер', required=True, default="/")
     date_end = fields.Date(compute='_set_date_end', track_visibility='always')
-    date_start = fields.Date(u'Исполнитель дата начала', track_visibility='always')
+    date_start = fields.Date(u'Исполнитель дата начала', track_visibility='always', copy=False)
     date_end_ex = fields.Date(u'Исполнитель дата окончания', track_visibility='onchange')
     date_start_pr = fields.Date(u'Утверждающий дата начала', track_visibility='onchange')
     date_end_pr = fields.Date(u'Утверждающий дата окончания', track_visibility='onchange')
