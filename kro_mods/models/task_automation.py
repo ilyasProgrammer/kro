@@ -15,7 +15,11 @@ class TaskMod(models.Model):
     def cron_task_automation(self):
         # plan = self.env['project.task'].search([('state', '=', 'plan')])
         # plan = self.env['project.task'].search([('state', '=', 'plan'), ('user_id', 'in', [43, 98, 91, 66, 149])])
-        plan = self.env['project.task'].search([('state', '=', 'plan'), ('user_id', 'in', [66])])
+        plan = self.env['project.task'].search([('state', '=', 'plan'),
+                                                ('user_id', 'in', [66]),
+                                                ('date_start', 'not', False),
+                                                ('date_end_ex', 'not', False),
+                                                ])
         plan.process_plan_tasks()
 
     @api.multi
@@ -28,11 +32,11 @@ class TaskMod(models.Model):
                 date = datetime.datetime.strptime(rec.create_date, '%Y-%m-%d %H:%M:%S')
                 msg_text = ''
                 date_diff = (now - date).days
-                if 34 > date_diff > 31 and 'PLAN 1 note' not in rec.notifications_history:
+                if date_diff > 31 and 'PLAN 1 note' not in rec.notifications_history:
                     msg_text = u"Прошу вывести задание из планирования или, если задание не актуально, то его завершить."
                     subject = u"Планирование > 31 дня"
                     rec.notifications_history += '%s\tPLAN 1 note\n' % str(now)
-                elif 37 > date_diff > 34 and 'PLAN 2 note' not in rec.notifications_history:
+                elif date_diff > 34 and 'PLAN 2 note' not in rec.notifications_history:
                     subject = u"Планирование > 34 дней"
                     msg_text = u"При отсутствии ответа в течении 3х дней, с момента получения письма, задание автоматически перейдет в статус завершено."
                     rec.notifications_history += '%s\tPLAN 2 note\n' % str(now)
