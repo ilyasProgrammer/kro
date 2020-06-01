@@ -17,8 +17,8 @@ class TaskMod(models.Model):
         # plan = self.env['project.task'].search([('state', '=', 'plan'), ('user_id', 'in', [43, 98, 91, 66, 149])])
         plan = self.env['project.task'].search([('state', '=', 'plan'),
                                                 ('user_id', 'in', [66]),
-                                                ('date_start', 'not', False),
-                                                ('date_end_ex', 'not', False),
+                                                ('date_start', '!=', False),
+                                                ('date_end_ex', '!=', False),
                                                 ])
         plan.process_plan_tasks()
 
