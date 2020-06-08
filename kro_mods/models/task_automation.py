@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from openerp import models, api, fields
-import datetime
+from datetime import datetime
 import logging
 
 log = logging.getLogger(__name__)
@@ -16,20 +16,41 @@ class TaskMod(models.Model):
         # plan = self.env['project.task'].search([('state', '=', 'plan')])
         # plan = self.env['project.task'].search([('state', '=', 'plan'), ('user_id', 'in', [43, 98, 91, 66, 149])])
         log.info("Started cron")
-        plan = self.env['project.task'].search([('state', '=', 'plan'),
-                                                ('user_id', 'in', [43, 98, 91, 66, 149]),
-                                                ('date_start', '!=', False),
-                                                ('date_end_ex', '!=', False),
-                                                ])
-        log.info("Plan tasks: %s", plan)
-        plan.process_plan_tasks()
+        base_url = self.env['ir.config_parameter'].get_param('web.base.url')
+        kwargs = {'author_id': 1, 'subtype_id': 2}
+        # plan = self.env['project.task'].search([('state', '=', 'plan'), ('date_start', '!=', False), ('date_end_ex', '!=', False)])
+        # log.info("Plan tasks: %s", plan)
+        # plan.process_plan_tasks(base_url, kwargs)
+        plan_soon_start = self.env['project.task'].search([('state', '=', 'plan'), ('date_start', '!=', False)])
+        log.info("Plan tasks soon start: %s", plan_soon_start)
+        plan_soon_start.process_plan_tasks_start_soon(base_url, kwargs)
         log.info("Finished cron")
 
     @api.multi
-    def process_plan_tasks(self):
-        base_url = self.env['ir.config_parameter'].get_param('web.base.url')
-        now = datetime.datetime.now()
-        kwargs = {'author_id': 1, 'subtype_id': 2}
+    def process_plan_tasks_start_soon(self, base_url, kwargs):
+        now = datetime.now().date()
+        for rec in self:
+            try:
+                date = datetime.strptime(rec.date_start, '%Y-%m-%d').date()
+                date_diff = (now - date).days
+                log.info("Date diff: %s %s", rec, str(date_diff))
+                if 0 <= date_diff <= 3:
+                    msg_text = u"Прошу вывести в согласование или перепланировать срок."
+                    subject = u"Сегодня начало" if date_diff == 0 else u"Скоро начало"
+                    body = """<a href="%s/web#model=res.partner&amp;id=%s" """ % (base_url, rec.user_id.partner_id.id)
+                    body += """class="cleaned_o_mail_redirect" data-oe-id="%s" """ % rec.user_id.partner_id.id
+                    body += """data-oe-model="res.partner" target="_blank">@%s</a> """ % rec.user_id.partner_id.name
+                    body += msg_text
+                    kwargs['partner_ids'] = [rec.user_id.partner_id.id]
+                    message = rec.message_post(body=body, subject=subject, message_type="email",  **kwargs)
+                    log.info('Sent PLAN task message starting soon. %s %s', rec, message)
+            except Exception as e:
+                log.error(rec)
+                log.error(e)
+
+    @api.multi
+    def process_plan_tasks(self, base_url, kwargs):
+        now = datetime.now()
         for rec in self:
             try:
                 date = datetime.datetime.strptime(rec.create_date, '%Y-%m-%d %H:%M:%S')
