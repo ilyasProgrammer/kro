@@ -15,12 +15,15 @@ class TaskMod(models.Model):
     def cron_task_automation(self):
         # plan = self.env['project.task'].search([('state', '=', 'plan')])
         # plan = self.env['project.task'].search([('state', '=', 'plan'), ('user_id', 'in', [43, 98, 91, 66, 149])])
+        log.info("Started cron")
         plan = self.env['project.task'].search([('state', '=', 'plan'),
                                                 ('user_id', 'in', [43, 98, 91, 66, 149]),
                                                 ('date_start', '!=', False),
                                                 ('date_end_ex', '!=', False),
                                                 ])
+        log.info("Plan tasks: %s", plan)
         plan.process_plan_tasks()
+        log.info("Finished cron")
 
     @api.multi
     def process_plan_tasks(self):
