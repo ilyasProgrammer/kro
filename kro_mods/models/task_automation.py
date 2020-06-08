@@ -41,11 +41,11 @@ class TaskMod(models.Model):
                     msg_text = u"Прошу вывести задание из планирования или, если задание не актуально, то его завершить."
                     subject = u"Планирование > 31 дня"
                     rec.notifications_history += '%s\tPLAN 1 note\n' % str(now)
-                elif rec.get_note_period(now, 'PLAN 1 note') > 3 and 'PLAN 2 note' not in rec.notifications_history:
+                elif rec.get_note_period(now, 'PLAN 1 note') > 2 and 'PLAN 2 note' not in rec.notifications_history:
                     subject = u"Планирование > 34 дней"
                     msg_text = u"При отсутствии ответа в течении 3х дней, с момента получения письма, задание автоматически перейдет в статус завершено."
                     rec.notifications_history += '%s\tPLAN 2 note\n' % str(now)
-                elif rec.get_note_period(now, 'PLAN 2 note') > 3 and 'PLAN 3 note' not in rec.notifications_history:
+                elif rec.get_note_period(now, 'PLAN 2 note') > 2 and 'PLAN 3 note' not in rec.notifications_history:
                     subject = u"Планирование > 40 дней"
                     msg_text = u"Задание завершено."
                     rec.notifications_history += '%s\tPLAN 3 note\n' % str(now)
@@ -56,12 +56,12 @@ class TaskMod(models.Model):
                         msg_text = u"Прошу вывести задание."
                         rec.notifications_history += '%s\tPLAN 1 depend on note\n' % str(now)
                     elif 'PLAN 2 depend on note' not in rec.notifications_history:
-                        if rec.get_note_period(now, 'PLAN 1 depend on note') > 3:
+                        if rec.get_note_period(now, 'PLAN 1 depend on note') > 2:
                             subject = u"Предыдущие задачи утверждаются"
                             msg_text = u"Прошу вывести задание 2й раз."
                             rec.notifications_history += '%s\tPLAN 2 depend on note\n' % str(now)
                     elif 'PLAN depend on 14 days note' not in rec.notifications_history:
-                        if rec.get_note_period(now, 'PLAN 2 depend on note') > 14:
+                        if rec.get_note_period(now, 'PLAN 2 depend on note') > 13:
                             subject = u"14 Дней прошло"
                             msg_text = u"Задание неактуально, переведено в завершено."
                             rec.notifications_history += '%s\tPLAN depend on 14 days note\n' % str(now)
