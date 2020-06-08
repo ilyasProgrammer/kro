@@ -3,6 +3,7 @@
 from openerp import models, api, fields
 from datetime import datetime
 import logging
+import time
 
 log = logging.getLogger(__name__)
 DONE_STAGES = ['stating', 'stated', 'approvement', 'approved', 'finished']
@@ -54,6 +55,7 @@ class TaskMod(models.Model):
                     kwargs['partner_ids'] = [rec.user_id.partner_id.id]
                     message = rec.message_post(body=body, subject=subject, message_type="email",  **kwargs)
                     log.info('Sent PLAN task message starting soon. %s %s', rec, message)
+                    time.sleep(1)
             except Exception as e:
                 log.error(rec)
                 log.error(e)
@@ -104,6 +106,7 @@ class TaskMod(models.Model):
                     kwargs['partner_ids'] = [rec.user_id.partner_id.id]
                     message = rec.message_post(body=body, subject=subject, message_type="email",  **kwargs)
                     log.info('Sent PLAN task message. %s %s', rec, message)
+                    time.sleep(1)
             except Exception as e:
                 log.error(rec)
                 log.error(e)
