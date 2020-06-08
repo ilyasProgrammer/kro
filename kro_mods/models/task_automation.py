@@ -35,7 +35,8 @@ class TaskMod(models.Model):
                 date = datetime.datetime.strptime(rec.create_date, '%Y-%m-%d %H:%M:%S')
                 msg_text = ''
                 date_diff = (now - date).days
-                log.info("Plan task date diff: %s", str(date_diff))
+                log.info("Plan task date diff: %s %s", rec, str(date_diff))
+                log.info("Note 11 period: %s %s", rec, str(rec.get_note_period(now, 'PLAN 1 note')))
                 if date_diff > 31 and 'PLAN 1 note' not in rec.notifications_history:
                     msg_text = u"Прошу вывести задание из планирования или, если задание не актуально, то его завершить."
                     subject = u"Планирование > 31 дня"
