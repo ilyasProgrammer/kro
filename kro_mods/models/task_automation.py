@@ -34,7 +34,17 @@ class TaskMod(models.Model):
                 date = datetime.strptime(rec.date_start, '%Y-%m-%d').date()
                 date_diff = (now - date).days
                 log.info("Date diff: %s %s", rec, str(date_diff))
+                message = ''
                 if 0 <= date_diff <= 3:
+                    if 'PLAN START SOON 1 note' not in rec.notifications_history:
+                        rec.notifications_history += '%s\tPLAN START SOON 1 note\n' % str(now)
+                    elif 'PLAN START SOON 2 note' not in rec.notifications_history:
+                        rec.notifications_history += '%s\tPLAN START SOON 2 note\n' % str(now)
+                    elif 'PLAN START SOON 3 note' not in rec.notifications_history:
+                        rec.notifications_history += '%s\tPLAN START SOON 3 note\n' % str(now)
+                    elif 'PLAN START SOON 4 note' not in rec.notifications_history:
+                        rec.notifications_history += '%s\tPLAN START SOON 4 note\n' % str(now)
+                if message:
                     msg_text = u"Прошу вывести в согласование или перепланировать срок."
                     subject = u"Сегодня начало" if date_diff == 0 else u"Скоро начало"
                     body = """<a href="%s/web#model=res.partner&amp;id=%s" """ % (base_url, rec.user_id.partner_id.id)
