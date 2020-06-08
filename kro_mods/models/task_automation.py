@@ -18,9 +18,9 @@ class TaskMod(models.Model):
         log.info("Started cron")
         base_url = self.env['ir.config_parameter'].get_param('web.base.url')
         kwargs = {'author_id': 1, 'subtype_id': 2}
-        # plan = self.env['project.task'].search([('state', '=', 'plan'), ('date_start', '!=', False), ('date_end_ex', '!=', False)])
-        # log.info("Plan tasks: %s", plan)
-        # plan.process_plan_tasks(base_url, kwargs)
+        plan = self.env['project.task'].search([('state', '=', 'plan'), ('date_start', '!=', False), ('date_end_ex', '!=', False)])
+        log.info("Plan tasks: %s", plan)
+        plan.process_plan_tasks(base_url, kwargs)
         plan_soon_start = self.env['project.task'].search([('state', '=', 'plan'), ('date_start', '!=', False)])
         log.info("Plan tasks soon start: %s", plan_soon_start)
         plan_soon_start.process_plan_tasks_start_soon(base_url, kwargs)
