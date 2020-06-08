@@ -63,7 +63,7 @@ class TaskMod(models.Model):
         now = datetime.now()
         for rec in self:
             try:
-                date = datetime.datetime.strptime(rec.create_date, '%Y-%m-%d %H:%M:%S')
+                date = datetime.strptime(rec.create_date, '%Y-%m-%d %H:%M:%S')
                 msg_text = ''
                 date_diff = (now - date).days
                 log.info("Plan task date diff: %s %s", rec, str(date_diff))
