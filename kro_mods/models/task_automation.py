@@ -89,5 +89,7 @@ class TaskMod(models.Model):
     def get_note_period(self, now, note):
         for l in self.notifications_history.splitlines():
             if l.split('\t')[1] == note:
-                return (now - datetime.datetime.strptime(l.split('\t')[0], '%Y-%m-%d %H:%M:%S.%f')).days
+                date = datetime.datetime.strptime(l.split('\t')[0], '%Y-%m-%d %H:%M:%S.%f')
+                log.info("Now %s date %s", now, date)
+                return (now - date).days
         return 0
