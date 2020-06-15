@@ -621,6 +621,7 @@
                         <field name="mark_result" attrs="{'readonly': [('planner', '=', False),('admin', '=', False)]}"/>
                         <field name="got_approver" attrs="{'readonly': [('planner', '=', False)]}"/>
                     </group>
+                    <field name="blocking_user_ids" widget="many2many_tags"/>
                 </group>
             </xpath>
             <field name="stage_id" position="replace">
@@ -639,6 +640,9 @@
                 </page>
                 <page name="dependent_ids" string='Следующие'>
                     <field name="dependent_ids" nolabel="1" widget="many2many_list" mode="tree" context="{'form_view_ref': 'project.view_task_form2'}" attrs="{'readonly': [('planner', '=', False),('admin', '=', False)]}"/>
+                </page>
+                <page name="history_page" string='История'>
+                    <field name="state_history"/>
                 </page>
             </page>
             <notebook position="before">

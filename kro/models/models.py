@@ -2,7 +2,7 @@
 
 from openerp import models, fields, api, _
 import datetime
-
+import pytz
 
 class Project(models.Model):
     _inherit = 'project.project'
@@ -544,6 +544,8 @@ class Task(models.Model):
     admin = fields.Boolean(compute='_compute_fields', default=False, store=False, readonly=True)
     doc_count = fields.Integer(compute='_get_attached_docs', string="Количество прикрепленных вложений")
     private = fields.Boolean(default=False, string=u'Приватный')
+    blocking_user_ids = fields.Many2many('res.users.blocking', string=u'Блокирующие')
+    state_history = fields.Text(u'История статусов', default="")
 
     @api.multi
     def _message_notification_recipients(self, message, recipients):
@@ -716,6 +718,25 @@ class Task(models.Model):
             'actions': actions
         }
         return res
+
+    @api.multi
+    def write(self, vals):
+        if len(self) == 1:
+            if vals.get('state') and vals['state'] != self.state:
+                current_user = self.env['res.users'].browse(self.env.uid)
+                # moment = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+                moment = datetime.datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC')).strftime('%Y-%m-%d %H:%M:%S')
+                vals['state_history'] = (self.state_history or '') + "%s\t%s\t%s\t%s\n" % (moment, vals['state'], current_user.name, self.env.uid)
+        res = super(Task, self).write(vals=vals)
+        return res
+
+
+class BlockingUser(models.Model):
+    _name = 'res.users.blocking'
+
+    user_id = fields.Many2one('res.user')
+    set_by_id = fields.Many2one('res.user')
+    message_id = fields.Many2one('mail.message')
 
 
 def make_unique(original_list):

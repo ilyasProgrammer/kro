@@ -4,6 +4,7 @@ from openerp import models, api, fields
 from datetime import datetime
 import logging
 import time
+import numpy as np
 import pytz
 
 log = logging.getLogger(__name__)
@@ -14,8 +15,7 @@ class TaskMod(models.Model):
     _inherit = 'project.task'
 
     @api.model
-    def cron_task_automation(self):
-        # plan = self.env['project.task'].search([('state', '=', 'plan')])
+    def cron_task_automation_plan(self):
         # plan = self.env['project.task'].search([('state', '=', 'plan'), ('user_id', 'in', [43, 98, 91, 66, 149])])
         log.info("Started cron")
         now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
@@ -129,3 +129,87 @@ class TaskMod(models.Model):
                 log.info("Rec %s Now %s date %s", self, now, date)
                 return (now - date).days
         return 0
+
+    @api.multi
+    def get_state_date(self, state):
+        for l in reversed(self.state_history.splitlines()):
+            if l.split('\t')[1] == state:
+                date = datetime.strptime(l.split('\t')[0], '%Y-%m-%d %H:%M:%S')
+                return date
+        return 0
+
+    @api.multi
+    def get_note_busday_period(self, now, note):
+        for l in self.notifications_history.splitlines():
+            if l.split('\t')[1] == note:
+                date = datetime.strptime(l.split('\t')[0], '%Y-%m-%d %H:%M:%S.%f')
+                log.info("Rec %s Now %s date %s", self, now, date)
+                return np.busday_count(now, date)
+        return 0
+
+    @api.model
+    def cron_task_automation_agreement(self):
+        log.info("Started cron")
+        agreement_tasks = self.env['project.task'].search([('state', '=', 'agreement'), ('date_start', '!=', False), ('date_end_ex', '!=', False)])
+        log.info("Agreement tasks: %s", agreement_tasks)
+        agreement_tasks.process_agreement_tasks()
+        log.info("Finished cron")
+
+    @api.multi
+    def process_agreement_tasks(self):
+        now = datetime.now(self.env.context.get('tz') or 'UTC')
+        for rec in self:
+            try:
+                if 'Agreement 1 note' not in rec.notifications_history:
+                    msg_text = u"Прошу согласовать в течение 24 часов."
+                    subject = u"Согласование"
+                    rec.notifications_history += '%s\tAgreement 1 note\n' % str(now)
+                    if rec.user_approver_id and not rec.approved_by_approver:
+                        rec.send_notification(rec.user_approver_id, msg_text, subject)
+                    if rec.user_predicator_id and not rec.approved_by_predicator:
+                        rec.send_notification(rec.user_predicator_id, msg_text, subject)
+                    if rec.user_executor_id and not rec.approved_by_executor:
+                        rec.send_notification(rec.user_executor_id, msg_text, subject)
+                elif 'Agreement 1 note' in rec.notifications_history:
+                    if rec.get_note_busday_period(now, 'Agreement 1 note') < 1:
+                        plan_date = rec.get_state_date('plan')
+                    else:
+                        msg_text = u"Задание не согласовывается, прошу сменить "
+                        subject = u"Согласование просрочено"
+                        if rec.user_approver_id and not rec.approved_by_approver:
+                            msg_text += u"подтверждающего"
+                            rec.send_notification(rec.user_approver_id, msg_text, subject)
+                            rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
+                        if rec.user_predicator_id and not rec.approved_by_predicator:
+                            msg_text += u"утверждающего"
+                            rec.send_notification(rec.user_predicator_id, msg_text, subject)
+                            rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
+                        if rec.user_executor_id and not rec.approved_by_executor:
+                            msg_text += u"исполнителя"
+                            rec.send_notification(rec.user_executor_id, msg_text, subject)
+                            rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
+            except Exception as e:
+                log.error(rec)
+                log.error(e)
+
+    @api.multi
+    def send_notification(self, user, msg_text, subject):
+        self.ensure_one()
+        base_url = self.env['ir.config_parameter'].get_param('web.base.url')
+        kwargs = {'author_id': 1, 'subtype_id': 2}
+        body = """<a href="%s/web#model=res.partner&amp;id=%s" """ % (base_url, user.partner_id.id)
+        body += """class="cleaned_o_mail_redirect" data-oe-id="%s" """ % user.partner_id.id
+        body += """data-oe-model="res.partner" target="_blank">@%s</a> """ % user.partner_id.name
+        body += msg_text
+        kwargs['partner_ids'] = [user.partner_id.id]
+        message = self.message_post(body=body, subject=subject, message_type="email", **kwargs)
+        log.info('Sent message. %s %s %s', self, user.partner_id, message)
+        time.sleep(1)
+
+    @api.multi
+    def message_post(self, body='', subject=None, message_type='notification', subtype=None, parent_id=False, attachments=None, content_subtype='html', **kwargs):
+        res = super(TaskMod, self).message_post(body=body, subject=subject, message_type=message_type, **kwargs)
+        # Set blocking_user_ids
+        # if res.model = 'task' and  res.source.status = 'approvement' and res.sender = executor and res.source_id.approved_by_executor not true:
+        #     rec.source_id.blocking user = [(6,0,rec.receiver)]  # add. Do not replace
+        pass

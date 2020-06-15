@@ -1,15 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
     <data>
-        <record model="ir.cron" id="cron_task_automation">
-            <field name='name'>KRO: Tasks Reminders and Automation</field>
-            <field name='interval_number'>1</field>
+        <record model="ir.cron" id="cron_task_automation_plan">
+            <field name='name'>KRO: Tasks Reminders and Automation - PLAN</field>
+            <field name='interval_number'>3</field>
             <field name='interval_type'>hours</field>
             <field name="numbercall">-1</field>
             <field name="active">False</field>
             <field name="doall" eval="False"/>
             <field name="model">project.task</field>
-            <field name="function">cron_task_automation</field>
+            <field name="function">cron_task_automation_plan</field>
+            <field name="priority" eval="1"/>
+            <field name="args">()</field>
+        </record>
+        <record model="ir.cron" id="cron_task_automation_agreement">
+            <field name='name'>KRO: Tasks Reminders and Automation - AGREEMENT</field>
+            <field name='interval_number'>3</field>
+            <field name='interval_type'>hours</field>
+            <field name="numbercall">-1</field>
+            <field name="active">False</field>
+            <field name="doall" eval="False"/>
+            <field name="model">project.task</field>
+            <field name="function">cron_task_automation_agreement</field>
             <field name="priority" eval="1"/>
             <field name="args">()</field>
         </record>
