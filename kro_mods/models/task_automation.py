@@ -156,6 +156,13 @@ class TaskMod(models.Model):
         log.info("Finished cron")
 
     @api.multi
+    def get_blocking_users(self, user_id):
+        for b in self.blocking_user_ids:
+            if b.set_by_id == user_id:
+                return b
+        return False
+
+    @api.multi
     def process_agreement_tasks(self):
         now = datetime.now(self.env.context.get('tz') or 'UTC')
         for rec in self:
@@ -171,15 +178,17 @@ class TaskMod(models.Model):
                     if rec.user_executor_id and not rec.approved_by_executor:
                         rec.send_notification(rec.user_executor_id, msg_text, subject)
                 elif 'Agreement 1 note' in rec.notifications_history:
-                    if rec.get_note_busday_period(now, 'Agreement 1 note') < 1:
-                        plan_date = rec.get_state_date('plan')
-                    else:
+                    if rec.get_note_busday_period(now, 'Agreement 1 note') > 0:
                         msg_text = u"Задание не согласовывается, прошу сменить "
                         subject = u"Согласование просрочено"
                         if rec.user_approver_id and not rec.approved_by_approver:
-                            msg_text += u"подтверждающего"
-                            rec.send_notification(rec.user_approver_id, msg_text, subject)
-                            rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
+                            approver_blockers = rec.get_blocking_users(rec.user_approver_id)
+                            if approver_blockers:
+                                pass
+                            else:
+                                msg_text += u"подтверждающего"
+                                rec.send_notification(rec.user_approver_id, msg_text, subject)
+                                rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
                         if rec.user_predicator_id and not rec.approved_by_predicator:
                             msg_text += u"утверждающего"
                             rec.send_notification(rec.user_predicator_id, msg_text, subject)
@@ -207,9 +216,36 @@ class TaskMod(models.Model):
         time.sleep(1)
 
     @api.multi
+    @api.returns('self', lambda value: value.id)
     def message_post(self, body='', subject=None, message_type='notification', subtype=None, parent_id=False, attachments=None, content_subtype='html', **kwargs):
         res = super(TaskMod, self).message_post(body=body, subject=subject, message_type=message_type, **kwargs)
         # Set blocking_user_ids
-        # if res.model = 'task' and  res.source.status = 'approvement' and res.sender = executor and res.source_id.approved_by_executor not true:
-        #     rec.source_id.blocking user = [(6,0,rec.receiver)]  # add. Do not replace
-        pass
+        if self.state == 'agreement':
+            if res.author_id == self.user_executor_id.partner_id and self.approved_by_executor is False:
+                for r in res.partner_ids:
+                    receiver = self.env['res.users'].search([('partner_id', '=', r.id)])
+                    new_block = self.env['res.users.blocking'].create(
+                        {'user_id': receiver.id,
+                         'task_id': self.id,
+                         'name': receiver.name,
+                         'set_by_id': self.user_executor_id.id,
+                         'message_id': res.id})
+            elif res.author_id == self.user_predicator_id.partner_id and self.approved_by_predicator is False:
+                for r in res.partner_ids:
+                    receiver = self.env['res.users'].search([('partner_id', '=', r.id)])
+                    new_block = self.env['res.users.blocking'].create(
+                        {'user_id': receiver.id,
+                         'task_id': self.id,
+                         'name': receiver.name,
+                         'set_by_id': self.user_predicator_id.id,
+                         'message_id': res.id})
+            elif res.author_id == self.user_approver_id.partner_id and self.approved_by_approver is False:
+                for r in res.partner_ids:
+                    receiver = self.env['res.users'].search([('partner_id', '=', r.id)])
+                    new_block = self.env['res.users.blocking'].create(
+                        {'user_id': receiver.id,
+                         'task_id': self.id,
+                         'name': receiver.name,
+                         'set_by_id': self.user_approver_id.id,
+                         'message_id': res.id})
+        return res

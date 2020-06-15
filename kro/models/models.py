@@ -544,7 +544,7 @@ class Task(models.Model):
     admin = fields.Boolean(compute='_compute_fields', default=False, store=False, readonly=True)
     doc_count = fields.Integer(compute='_get_attached_docs', string="Количество прикрепленных вложений")
     private = fields.Boolean(default=False, string=u'Приватный')
-    blocking_user_ids = fields.Many2many('res.users.blocking', string=u'Блокирующие')
+    blocking_user_ids = fields.One2many('res.users.blocking', 'task_id', string=u'Блокирующие')
     state_history = fields.Text(u'История статусов', default="")
 
     @api.multi
@@ -734,8 +734,10 @@ class Task(models.Model):
 class BlockingUser(models.Model):
     _name = 'res.users.blocking'
 
-    user_id = fields.Many2one('res.user')
-    set_by_id = fields.Many2one('res.user')
+    name = fields.Char()
+    task_id = fields.Many2one('project.task')
+    user_id = fields.Many2one('res.users')
+    set_by_id = fields.Many2one('res.users')
     message_id = fields.Many2one('mail.message')
 
 
