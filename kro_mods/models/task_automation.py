@@ -4,6 +4,7 @@ from openerp import models, api, fields
 from datetime import datetime
 import logging
 import time
+import pytz
 import numpy as np
 import pytz
 
@@ -164,7 +165,7 @@ class TaskMod(models.Model):
 
     @api.multi
     def process_agreement_tasks(self):
-        now = datetime.now(self.env.context.get('tz') or 'UTC')
+        now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
         for rec in self:
             try:
                 if 'Agreement 1 note' not in rec.notifications_history:
@@ -181,22 +182,39 @@ class TaskMod(models.Model):
                     if rec.get_note_busday_period(now, 'Agreement 1 note') > 0:
                         msg_text = u"Задание не согласовывается, прошу сменить "
                         subject = u"Согласование просрочено"
+                        if rec.user_executor_id and not rec.approved_by_executor:
+                            executor_blockers = rec.get_blocking_users(rec.user_executor_id)
+                            if executor_blockers:
+                                if executor_blockers.create_date - now > 0 and 'Agreement blocked note' not in rec.notifications_history:
+                                    msg = "Вопрошаемый не отвечает. Спрашивал исполнитель: %s. Вопрос задан: %s" % (executor_blockers.set_by_id.name, executor_blockers.user_id.name)
+                                    rec.send_notification(rec.user_id, msg, "Блокировка задания. Нет ответа.")
+                                    rec.notifications_history += '%s\tAgreement blocked note\n' % str(now)
+                            else:
+                                msg_text += u"исполнителя"
+                                rec.send_notification(rec.user_executor_id, msg_text, subject)
+                                rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
                         if rec.user_approver_id and not rec.approved_by_approver:
                             approver_blockers = rec.get_blocking_users(rec.user_approver_id)
                             if approver_blockers:
-                                pass
+                                if approver_blockers.create_date - now > 0 and 'Agreement blocked note' not in rec.notifications_history:
+                                    msg = "Вопрошаемый не отвечает. Спрашивал подтверждающий: %s. Вопрос задан: %s" % (approver_blockers.set_by_id.name, approver_blockers.user_id.name)
+                                    rec.send_notification(rec.user_id, msg, "Блокировка задания. Нет ответа.")
+                                    rec.notifications_history += '%s\tAgreement blocked note\n' % str(now)
                             else:
                                 msg_text += u"подтверждающего"
                                 rec.send_notification(rec.user_approver_id, msg_text, subject)
                                 rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
                         if rec.user_predicator_id and not rec.approved_by_predicator:
-                            msg_text += u"утверждающего"
-                            rec.send_notification(rec.user_predicator_id, msg_text, subject)
-                            rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
-                        if rec.user_executor_id and not rec.approved_by_executor:
-                            msg_text += u"исполнителя"
-                            rec.send_notification(rec.user_executor_id, msg_text, subject)
-                            rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
+                            predicator_blockers = rec.get_blocking_users(rec.user_predicator_id)
+                            if predicator_blockers:
+                                if predicator_blockers.create_date - now > 0 and 'Agreement blocked note' not in rec.notifications_history:
+                                    msg = "Вопрошаемый не отвечает. Спрашивал утверждающий: %s. Вопрос задан: %s" % (predicator_blockers.set_by_id.name, predicator_blockers.user_id.name)
+                                    rec.send_notification(rec.user_id, msg, "Блокировка задания. Нет ответа.")
+                                    rec.notifications_history += '%s\tAgreement blocked note\n' % str(now)
+                            else:
+                                msg_text += u"утверждающего"
+                                rec.send_notification(rec.user_predicator_id, msg_text, subject)
+                                rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
             except Exception as e:
                 log.error(rec)
                 log.error(e)
