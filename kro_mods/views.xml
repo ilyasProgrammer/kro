@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+<data>
+    <!--ЗАДАНИЕ - TASK-->
+    <record id="view_task_kro_mods_form" model="ir.ui.view">
+        <field name="name">project.task.form.kro.mods</field>
+        <field name="model">project.task</field>
+        <field eval="258" name="priority"/>
+        <field name="inherit_id" ref="kro.view_task_form"/>
+        <field name="arch" type="xml">
+            <page name="history_page" position='after'>
+                <page name="notifications_history_page" string='Оповещения'>
+                    <field name="notifications_history"/>
+                </page>
+            </page>
+        </field>
+    </record>
+</data>
+</openerp>

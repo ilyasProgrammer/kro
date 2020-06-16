@@ -143,9 +143,8 @@ class TaskMod(models.Model):
     def get_note_busday_period(self, now, note):
         for l in self.notifications_history.splitlines():
             if l.split('\t')[1] == note:
-                date = datetime.strptime(l.split('\t')[0], '%Y-%m-%d %H:%M:%S.%f')
-                log.info("Rec %s Now %s date %s", self, now, date)
-                return np.busday_count(now, date)
+                date = datetime.strptime(l.split('\t')[0][:19], '%Y-%m-%d %H:%M:%S')
+                return np.busday_count(date.date(), now.date())
         return 0
 
     @api.model
@@ -158,14 +157,14 @@ class TaskMod(models.Model):
 
     @api.multi
     def get_blocking_users(self, user_id):
-        for b in self.blocking_user_ids:
+        for b in self.blocking_user_ids.sorted(key=lambda r: r.id, reverse=True):  # Take last one
             if b.set_by_id == user_id:
                 return b
         return False
 
     @api.multi
     def process_agreement_tasks(self):
-        now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
+        now = datetime.now(pytz.timezone('Asia/Yekaterinburg'))
         for rec in self:
             try:
                 if 'Agreement 1 note' not in rec.notifications_history:
@@ -185,7 +184,8 @@ class TaskMod(models.Model):
                         if rec.user_executor_id and not rec.approved_by_executor:
                             executor_blockers = rec.get_blocking_users(rec.user_executor_id)
                             if executor_blockers:
-                                if executor_blockers.create_date - now > 0 and 'Agreement blocked note' not in rec.notifications_history:
+                                period = (now.replace(tzinfo=None) - datetime.strptime(executor_blockers.create_date, '%Y-%m-%d %H:%M:%S')).days
+                                if period > 0 and 'Agreement blocked note' not in rec.notifications_history:
                                     msg = "Вопрошаемый не отвечает. Спрашивал исполнитель: %s. Вопрос задан: %s" % (executor_blockers.set_by_id.name, executor_blockers.user_id.name)
                                     rec.send_notification(rec.user_id, msg, "Блокировка задания. Нет ответа.")
                                     rec.notifications_history += '%s\tAgreement blocked note\n' % str(now)
@@ -196,7 +196,8 @@ class TaskMod(models.Model):
                         if rec.user_approver_id and not rec.approved_by_approver:
                             approver_blockers = rec.get_blocking_users(rec.user_approver_id)
                             if approver_blockers:
-                                if approver_blockers.create_date - now > 0 and 'Agreement blocked note' not in rec.notifications_history:
+                                period = (now.replace(tzinfo=None) - datetime.strptime(approver_blockers.create_date, '%Y-%m-%d %H:%M:%S')).days
+                                if period > 0 and 'Agreement blocked note' not in rec.notifications_history:
                                     msg = "Вопрошаемый не отвечает. Спрашивал подтверждающий: %s. Вопрос задан: %s" % (approver_blockers.set_by_id.name, approver_blockers.user_id.name)
                                     rec.send_notification(rec.user_id, msg, "Блокировка задания. Нет ответа.")
                                     rec.notifications_history += '%s\tAgreement blocked note\n' % str(now)
@@ -207,7 +208,8 @@ class TaskMod(models.Model):
                         if rec.user_predicator_id and not rec.approved_by_predicator:
                             predicator_blockers = rec.get_blocking_users(rec.user_predicator_id)
                             if predicator_blockers:
-                                if predicator_blockers.create_date - now > 0 and 'Agreement blocked note' not in rec.notifications_history:
+                                period = (now.replace(tzinfo=None) - datetime.strptime(predicator_blockers.create_date, '%Y-%m-%d %H:%M:%S')).days
+                                if period > 0 and 'Agreement blocked note' not in rec.notifications_history:
                                     msg = "Вопрошаемый не отвечает. Спрашивал утверждающий: %s. Вопрос задан: %s" % (predicator_blockers.set_by_id.name, predicator_blockers.user_id.name)
                                     rec.send_notification(rec.user_id, msg, "Блокировка задания. Нет ответа.")
                                     rec.notifications_history += '%s\tAgreement blocked note\n' % str(now)
