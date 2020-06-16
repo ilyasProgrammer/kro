@@ -158,16 +158,57 @@ class TaskMod(models.Model):
     @api.multi
     def get_blocking_users(self, user_id):
         for b in self.blocking_user_ids.sorted(key=lambda r: r.id, reverse=True):  # Take last one
-            if b.set_by_id == user_id:
+            if b.set_by_id == user_id and not b.answered:
+                return b
+        return False
+
+    @api.multi
+    def get_last_answered_block(self, user_id):
+        for b in self.blocking_user_ids.sorted(key=lambda r: r.id, reverse=True):  # Take last one
+            if b.set_by_id == user_id and b.answered:
                 return b
         return False
 
     @api.multi
     def process_agreement_tasks(self):
+        olga = self.env['res.users'].browse(66)
         now = datetime.now(pytz.timezone('Asia/Yekaterinburg'))
         for rec in self:
             try:
-                if 'Agreement 1 note' not in rec.notifications_history:
+                if rec.is_agreed():
+                    rec.state = 'assigned'
+                    continue
+                elif 'Agreement blocked note' in rec.notifications_history:  # TODO filter it initially
+                    continue
+                elif 'Agreement no action note' in rec.notifications_history:  # TODO filter it initially
+                    continue
+                elif 'Agreement expired by elder note' in rec.notifications_history:  # TODO filter it initially
+                    continue
+                elif 'Agreement executors elder set' in rec.notifications_history:
+                    if rec.get_note_busday_period(now, 'Agreement executors elder set') > 1:
+                        if rec.user_executor_id and not rec.approved_by_executor:
+                            rec.send_notification(olga, "Просрочено старшим", "Просрочено старшим")
+                            rec.notifications_history += '%s\tAgreement expired by elder note\n' % str(now)
+                elif 'Agreement 2 note' in rec.notifications_history:
+                    if rec.get_note_busday_period(now, 'Agreement 2 note') > 0:
+                        if rec.user_executor_id and not rec.approved_by_executor:
+                            executor_blockers = rec.get_blocking_users(rec.user_executor_id)
+                            if executor_blockers:
+                                period = (now.replace(tzinfo=None) - datetime.strptime(executor_blockers.create_date, '%Y-%m-%d %H:%M:%S')).days
+                                if period > 0 and 'Agreement blocked note' not in rec.notifications_history:
+                                    msg = "Вопрошаемый не отвечает. Спрашивал исполнитель: %s. Вопрос задан: %s" % (executor_blockers.set_by_id.name, executor_blockers.user_id.name)
+                                    rec.send_notification(rec.user_id, msg, "Блокировка задания. Нет ответа.")
+                                    rec.notifications_history += '%s\tAgreement blocked note\n' % str(now)
+                            else:
+                                last_answer = rec.get_last_answered_block(rec.user_executor_id)
+                                period = (now.replace(tzinfo=None) - datetime.strptime(last_answer.answer_date, '%Y-%m-%d %H:%M:%S')).days
+                                if last_answer and period > 1:
+                                    rec.send_notification(rec.user_id, "Нет действий", "Нет действий")
+                                    rec.notifications_history += '%s\tAgreement no action note\n' % str(now)
+                                elif not last_answer and period > 1:
+                                    rec.user_executor_id = rec.user_executor_id.manager_id
+                                    rec.notifications_history += '%s\tAgreement executors elder set\n' % str(now)
+                elif 'Agreement 1 note' not in rec.notifications_history:
                     msg_text = u"Прошу согласовать в течение 24 часов."
                     subject = u"Согласование"
                     rec.notifications_history += '%s\tAgreement 1 note\n' % str(now)
@@ -189,10 +230,17 @@ class TaskMod(models.Model):
                                     msg = "Вопрошаемый не отвечает. Спрашивал исполнитель: %s. Вопрос задан: %s" % (executor_blockers.set_by_id.name, executor_blockers.user_id.name)
                                     rec.send_notification(rec.user_id, msg, "Блокировка задания. Нет ответа.")
                                     rec.notifications_history += '%s\tAgreement blocked note\n' % str(now)
+                                else:
+                                    # TODO
+                                    pass
                             else:
-                                msg_text += u"исполнителя"
-                                rec.send_notification(rec.user_executor_id, msg_text, subject)
-                                rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
+                                last_answer = rec.get_last_answered_block(rec.user_executor_id)
+                                period = (now.replace(tzinfo=None) - datetime.strptime(last_answer.answer_date, '%Y-%m-%d %H:%M:%S')).days
+                                if last_answer and period > 1:
+                                    msg_text += u"исполнителя"
+                                    rec.send_notification(rec.user_executor_id, msg_text, subject)
+                                    rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
+                                    rec.notifications_history += '%s\tAgreement 2 note\n' % str(now)
                         if rec.user_approver_id and not rec.approved_by_approver:
                             approver_blockers = rec.get_blocking_users(rec.user_approver_id)
                             if approver_blockers:
@@ -220,6 +268,22 @@ class TaskMod(models.Model):
             except Exception as e:
                 log.error(rec)
                 log.error(e)
+
+    @api.multi
+    def is_agreed(self):
+        self.ensure_one()
+        if self.user_executor_id and self.user_predicator_id and self.user_approver_id:
+            if self.approved_by_executor and self.approved_by_predicator and self.approved_by_approver:
+                return True
+        elif self.user_executor_id and self.user_predicator_id:
+            if self.approved_by_executor and self.approved_by_predicator:
+                return True
+        elif self.user_executor_id and self.user_approver_id:
+            if self.approved_by_executor and self.approved_by_approver:
+                return True
+        elif self.user_executor_id and self.approved_by_executor:
+            return True
+        return False
 
     @api.multi
     def send_notification(self, user, msg_text, subject):

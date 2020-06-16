@@ -734,11 +734,18 @@ class Task(models.Model):
 class BlockingUser(models.Model):
     _name = 'res.users.blocking'
 
-    name = fields.Char()
-    task_id = fields.Many2one('project.task')
-    user_id = fields.Many2one('res.users')
-    set_by_id = fields.Many2one('res.users')
-    message_id = fields.Many2one('mail.message')
+    name = fields.Char(u"Имя")
+    answered = fields.Boolean(u"Ответил", default=False)
+    answer_date = fields.Datetime(u"Дата Ответа")
+    task_id = fields.Many2one('project.task', u"Задание")
+    user_id = fields.Many2one('res.users', u"Отвечающий")
+    set_by_id = fields.Many2one('res.users', u"Спросил")
+    message_id = fields.Many2one('mail.message', u"Сообщение")
+    body = fields.Html(related="message_id.body", string=u"Сообщение")
+
+    @api.onchange("answered")
+    def onchange_answered(self):
+        self.answer_date = datetime.datetime.now(pytz.timezone('Asia/Yekaterinburg')).replace(tzinfo=None)
 
 
 def make_unique(original_list):

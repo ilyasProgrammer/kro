@@ -621,7 +621,6 @@
                         <field name="mark_result" attrs="{'readonly': [('planner', '=', False),('admin', '=', False)]}"/>
                         <field name="got_approver" attrs="{'readonly': [('planner', '=', False)]}"/>
                     </group>
-                    <field name="blocking_user_ids" widget="many2many_tags"/>
                 </group>
             </xpath>
             <field name="stage_id" position="replace">
@@ -635,6 +634,18 @@
                 <field name="date_end" readonly="1"/>
             </field>
             <page name="description_page" position='after'>
+                <page name="blocking_user_ids_page" string='Блокирующие'>
+                    <field name="blocking_user_ids" type="tree">
+                        <tree string="Блокирующие">
+                            <field name="user_id"/>
+                            <field name="set_by_id"/>
+                            <field name="message_id"/>
+                            <field name="create_date" string="Дата вопроса"/>
+                            <field name="answer_date"/>
+                            <field name="answered"/>
+                        </tree>
+                    </field>
+                </page>
                 <page name="depend_on_ids" string='Предыдущие'>
                     <field name="depend_on_ids" nolabel="1" widget="many2many_list" mode="tree" context="{'form_view_ref': 'project.view_task_form2'}" attrs="{'readonly': [('planner', '=', False),('admin', '=', False)]}"/>
                 </page>
