@@ -636,7 +636,7 @@
             <page name="description_page" position='after'>
                 <page name="blocking_user_ids_page" string='Блокирующие'>
                     <field name="blocking_user_ids" type="tree">
-                        <tree string="Блокирующие">
+                        <tree string="Блокирующие" editable="top">
                             <field name="user_id"/>
                             <field name="set_by_id"/>
                             <field name="message_id"/>

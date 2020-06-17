@@ -140,13 +140,11 @@ class TaskMod(models.Model):
         return 0
 
     @api.multi
-    def get_note_busday_period(self, note):
-        # now and dates in notifications_history are UTC+5
-        now_ekt = datetime.now(pytz.timezone('Asia/Yekaterinburg')).replace(tzinfo=None).date()
+    def get_note_busday_period(self, now, note):
         for l in self.notifications_history.splitlines():
             if l.split('\t')[1] == note:
                 date = datetime.strptime(l.split('\t')[0][:19], '%Y-%m-%d %H:%M:%S')
-                return np.busday_count(date.date(), now_ekt)
+                return np.busday_count(date.date(), now.date())
         return 0
 
     @api.model
@@ -174,103 +172,101 @@ class TaskMod(models.Model):
     @api.multi
     def process_agreement_tasks(self):
         olga = self.env['res.users'].browse(66)
-        now_utc = datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
+        now = datetime.now(pytz.timezone('Asia/Yekaterinburg')).replace(tzinfo=None).replace(microsecond=0)
         for rec in self:
             try:
                 if rec.is_agreed():
                     rec.state = 'assigned'
-                    self.env.cr.commit()
                     continue
                 elif 'Agreement blocked' in rec.notifications_history:  # TODO filter it initially
                     continue
                 elif 'Agreement no action' in rec.notifications_history:  # TODO filter it initially
                     continue
-                elif 'Agreement expired by supervisor' in rec.notifications_history:  # TODO filter it initially
+                elif 'Agreement expired by elder' in rec.notifications_history:  # TODO filter it initially
                     continue
-                elif 'Agreement executors supervisor assigned' in rec.notifications_history:
-                    if rec.get_note_busday_period('Agreement executors supervisor assigned') > 1:
+                elif 'Agreement executors elder set' in rec.notifications_history:
+                    if rec.get_note_busday_period(now, 'Agreement executors elder set') > 1:
                         if rec.user_executor_id and not rec.approved_by_executor:
-                            rec.send_notification(olga, u"Просрочено руководителем", u"Просрочено руководителем")
-                            rec.history_record('Agreement expired by supervisor')
+                            rec.send_notification(olga, "Просрочено старшим", "Просрочено старшим")
+                            rec.notifications_history += '%s\tAgreement expired by elder\n' % str(now)
                 elif 'Agreement 2' in rec.notifications_history:
-                    if rec.get_note_busday_period('Agreement 2') > 0:
+                    if rec.get_note_busday_period(now, 'Agreement 2') > 0:
                         if rec.user_executor_id and not rec.approved_by_executor:
                             executor_blockers = rec.get_blocking_users(rec.user_executor_id)
                             if executor_blockers:
-                                period = np.busday_count(d(executor_blockers.create_date), now_utc.date())
+                                period = (now.replace(tzinfo=None) - datetime.strptime(executor_blockers.create_date, '%Y-%m-%d %H:%M:%S')).days
                                 if period > 0 and 'Agreement blocked' not in rec.notifications_history:
                                     msg = u"Вопрошаемый не отвечает. Спрашивал исполнитель: %s. Вопрос задан: %s" % (executor_blockers.set_by_id.name, executor_blockers.user_id.name)
                                     rec.send_notification(rec.user_id, msg, u"Блокировка задания. Нет ответа.")
-                                    rec.history_record('Agreement blocked')
+                                    rec.notifications_history += '%s\tAgreement blocked\n' % str(now)
                             else:
                                 last_answer = rec.get_last_answered_block(rec.user_executor_id)
-                                if last_answer:
-                                    period = np.busday_count(d(last_answer.answer_date), now_utc.date())
-                                    if period > 1:
-                                        if rec.user_executor_id.manager_id:
-                                            rec.user_executor_id = rec.user_executor_id.manager_id
-                                            msg = u"""Исполнитель заменен на его руководителя.  Иполнитель задал вопрос. На него был дан ответ. 
-                                                      Прошло больше одного рабочего дня. Исполнитель не согласовал и не задал новых вопросов."""
-                                            rec.send_notification(rec.user_id, msg, u"Автозамена исполнителя")  # ОЗП
-                                            rec.history_record('Agreement executors supervisor assigned')
-                                        else:
-                                            msg = u"""Сроки согласования просрочены и у исполнителя нет руководителя. Задание заблокировано.
-                                                      Иполнитель задал вопрос. На него был дан ответ. Прошло больше одного рабочего дня. 
-                                                      Исполнитель не согласовал и не задал новых вопросов."""
-                                            rec.send_notification(rec.user_id, msg, "Нет руководителя у исполнителя")  # ОЗП
-                                            rec.history_record('Agreement blocked\texecutor')
-                                    else:
-                                        pass  # Последний ответ был < 24 назад. Еще есть время среагировать
-                                else:
-                                    if rec.user_executor_id.manager_id:
-                                        rec.user_executor_id = rec.user_executor_id.manager_id
-                                        rec.send_notification(rec.user_id, u"Исполнитель заменен на его руководителя. Нет согласования больше 3х рабочих дней.", u"Автозамена исполнителя")  # ОЗП
-                                        rec.history_record('Agreement executors supervisor assigned')
-                                    else:
-                                        msg = u"""Сроки согласования просрочены и у исполнителя нет руководителя. Задание заблокировано."""
-                                        rec.send_notification(rec.user_id, msg, u"Нет руководителя у исполнителя")  # ОЗП
-                                        rec.history_record('Agreement blocked\texecutor')
+                                period = (now.replace(tzinfo=None) - datetime.strptime(last_answer.answer_date, '%Y-%m-%d %H:%M:%S')).days
+                                if last_answer and period > 1:
+                                    rec.send_notification(rec.user_id, "Нет действий", "Нет действий")
+                                    rec.notifications_history += '%s\tAgreement no action\n' % str(now)
+                                elif not last_answer and period > 1:
+                                    rec.user_executor_id = rec.user_executor_id.manager_id
+                                    rec.notifications_history += '%s\tAgreement executors elder set\n' % str(now)
                 elif 'Agreement 1' not in rec.notifications_history:
                     msg_text = u"Прошу согласовать в течение 24 часов."
                     subject = u"Согласование"
-                    rec.history_record('Agreement 1')
-                    if rec.user_executor_id and not rec.approved_by_executor:
-                        rec.send_notification(rec.user_executor_id, msg_text, subject)
+                    rec.notifications_history += '%s\tAgreement 1\n' % str(now)
                     if rec.user_approver_id and not rec.approved_by_approver:
                         rec.send_notification(rec.user_approver_id, msg_text, subject)
                     if rec.user_predicator_id and not rec.approved_by_predicator:
                         rec.send_notification(rec.user_predicator_id, msg_text, subject)
+                    if rec.user_executor_id and not rec.approved_by_executor:
+                        rec.send_notification(rec.user_executor_id, msg_text, subject)
                 elif 'Agreement 1' in rec.notifications_history:
-                    if rec.get_note_busday_period('Agreement 1') > 0:
+                    if rec.get_note_busday_period(now, 'Agreement 1') > 0:
+                        msg_text = u"Задание не согласовывается, прошу сменить "
+                        subject = u"Согласование просрочено"
                         if rec.user_executor_id and not rec.approved_by_executor:
                             executor_blockers = rec.get_blocking_users(rec.user_executor_id)
                             if executor_blockers:
-                                period = np.busday_count(d(executor_blockers.create_date), now_utc.date())
+                                period = (now.replace(tzinfo=None) - datetime.strptime(executor_blockers.create_date, '%Y-%m-%d %H:%M:%S')).days
                                 if period > 0 and 'Agreement blocked' not in rec.notifications_history:
                                     msg = u"Вопрошаемый не отвечает. Спрашивал исполнитель: %s. Вопрос задан: %s" % (executor_blockers.set_by_id.name, executor_blockers.user_id.name)
                                     rec.send_notification(rec.user_id, msg, u"Блокировка задания. Нет ответа.")
-                                    rec.history_record('Agreement blocked')
+                                    rec.notifications_history += '%s\tAgreement blocked\n' % str(now)
                                 else:
-                                    pass  # Вопрос задан < 24 часов назад. Еще есть время ответить
+                                    # TODO
+                                    pass
                             else:
                                 last_answer = rec.get_last_answered_block(rec.user_executor_id)
-                                if last_answer:
-                                    period = np.busday_count(d(last_answer.answer_date), now_utc.date())
-                                    if period > 0:
-                                        msg_text = u"""Задание не согласовывается, прошу сменить исполнителя. Иполнитель задал вопрос. На него был дан ответ. 
-                                                       Прошло больше одного рабочего дня. Исполнитель не согласовал и не задал новых вопросов."""
-                                        subject = u"Согласование просрочено"
-                                        rec.send_notification(rec.user_executor_id, msg_text, subject)
-                                        rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
-                                        rec.history_record('Agreement 2\texecutor')
-                                    else:
-                                        pass  # Последний ответ был < 24 назад. Еще есть время среагировать
-                                else:
-                                    msg_text = u"Задание не согласовывается. Исполнитель не проявляет активности больше 1 рабочего дня. Просьба сменить исполнителя."
-                                    subject = u"Согласование просрочено. Прошло 48 часов."
+                                period = (now.replace(tzinfo=None) - datetime.strptime(last_answer.answer_date, '%Y-%m-%d %H:%M:%S')).days
+                                if last_answer and period > 1:
+                                    msg_text += u"исполнителя"
                                     rec.send_notification(rec.user_executor_id, msg_text, subject)
                                     rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
-                                    rec.history_record('Agreement 2\texecutor')
+                                    rec.notifications_history += '%s\tAgreement 2\texecutor\n' % str(now)
+                        if rec.user_approver_id and not rec.approved_by_approver:
+                            approver_blockers = rec.get_blocking_users(rec.user_approver_id)
+                            if approver_blockers:
+                                period = (now.replace(tzinfo=None) - datetime.strptime(approver_blockers.create_date, '%Y-%m-%d %H:%M:%S')).days
+                                if period > 0 and 'Agreement blocked' not in rec.notifications_history:
+                                    msg = "Вопрошаемый не отвечает. Спрашивал подтверждающий: %s. Вопрос задан: %s" % (approver_blockers.set_by_id.name, approver_blockers.user_id.name)
+                                    rec.send_notification(rec.user_id, msg, "Блокировка задания. Нет ответа.")
+                                    rec.notifications_history += '%s\tAgreement blocked\n' % str(now)
+                            else:
+                                msg_text += u"подтверждающего"
+                                rec.send_notification(rec.user_approver_id, msg_text, subject)
+                                rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
+                                rec.notifications_history += '%s\tAgreement 2\tapprover\n' % str(now)
+                        if rec.user_predicator_id and not rec.approved_by_predicator:
+                            predicator_blockers = rec.get_blocking_users(rec.user_predicator_id)
+                            if predicator_blockers:
+                                period = (now.replace(tzinfo=None) - datetime.strptime(predicator_blockers.create_date, '%Y-%m-%d %H:%M:%S')).days
+                                if period > 0 and 'Agreement blocked' not in rec.notifications_history:
+                                    msg = "Вопрошаемый не отвечает. Спрашивал утверждающий: %s. Вопрос задан: %s" % (predicator_blockers.set_by_id.name, predicator_blockers.user_id.name)
+                                    rec.send_notification(rec.user_id, msg, "Блокировка задания. Нет ответа.")
+                                    rec.notifications_history += '%s\tAgreement blocked\n' % str(now)
+                            else:
+                                msg_text += u"утверждающего"
+                                rec.send_notification(rec.user_predicator_id, msg_text, subject)
+                                rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
+                                rec.notifications_history += '%s\tAgreement 2\tpredicator\n' % str(now)
                 self.env.cr.commit()
             except Exception as e:
                 log.error(rec)
@@ -291,12 +287,6 @@ class TaskMod(models.Model):
         elif self.user_executor_id and self.approved_by_executor:
             return True
         return False
-
-    @api.multi
-    def history_record(self, msg):
-        now_ekt = datetime.now(pytz.timezone('Asia/Yekaterinburg')).replace(tzinfo=None).replace(microsecond=0)
-        for rec in self:
-            rec.notifications_history += '%s\t%s\n' % (str(now_ekt), msg)
 
     @api.multi
     def send_notification(self, user, msg_text, subject):
@@ -346,11 +336,3 @@ class TaskMod(models.Model):
                          'set_by_id': self.user_approver_id.id,
                          'message_id': res.id})
         return res
-
-
-def t(time_str):
-    return datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
-
-
-def d(time_str):
-    return datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S').date()

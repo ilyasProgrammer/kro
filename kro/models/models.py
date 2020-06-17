@@ -745,7 +745,10 @@ class BlockingUser(models.Model):
 
     @api.onchange("answered")
     def onchange_answered(self):
-        self.answer_date = datetime.datetime.now(pytz.timezone('Asia/Yekaterinburg')).replace(tzinfo=None)
+        if self.answered:
+            self.answer_date = datetime.datetime.now()
+        else:
+            self.answer_date = False
 
 
 def make_unique(original_list):
