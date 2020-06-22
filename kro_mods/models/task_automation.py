@@ -21,7 +21,7 @@ class TaskMod(models.Model):
         now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
         base_url = self.env['ir.config_parameter'].get_param('web.base.url')
         kwargs = {'author_id': 1, 'subtype_id': 2}
-        plan = self.env['project.task'].search([('state', '=', 'plan'), ('date_start', '>', now), ('date_end_ex', '!=', False)])
+        plan = self.env['project.task'].search([('state', '=', 'plan'), ('date_start', '<', now), ('date_end_ex', '!=', False)])
         log.info("Plan tasks: %s", plan)
         plan.process_plan_tasks(base_url, kwargs)
         plan_soon_start = self.env['project.task'].search([('state', '=', 'plan'), ('date_start', '!=', False)])
