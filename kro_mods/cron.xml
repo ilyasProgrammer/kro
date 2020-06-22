@@ -22,7 +22,7 @@
             <field name="doall" eval="False"/>
             <field name="model">project.task</field>
             <field name="function">cron_task_automation_agreement</field>
-            <field name="priority" eval="1"/>
+            <field name="priority" eval="2"/>
             <field name="args">()</field>
         </record>
     </data>
