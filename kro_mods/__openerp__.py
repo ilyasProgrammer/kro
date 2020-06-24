@@ -7,7 +7,7 @@
     'category': 'Project',
     'version': '2.0',
     'depends': ['kro'],
-    'data': ['cron.xml'],
+    'data': ['cron.xml','views.xml'],
     'installable': True,
     'application': True,
     'auto_install': False,
