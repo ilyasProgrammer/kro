@@ -735,7 +735,7 @@ class BlockingUser(models.Model):
     _name = 'res.users.blocking'
 
     name = fields.Char(u"Имя")
-    answered = fields.Boolean(u"Ответил", default=False)
+    answered = fields.Boolean(u"Ответил", default=True)
     answer_date = fields.Datetime(u"Дата Ответа")
     task_id = fields.Many2one('project.task', u"Задание")
     user_id = fields.Many2one('res.users', u"Отвечающий")
