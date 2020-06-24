@@ -152,7 +152,7 @@ class TaskMod(models.Model):
     @api.model
     def cron_task_automation_agreement(self):
         log.info("Started cron")
-        agreement_tasks = self.env['project.task'].search([('user_id', 'in', [98, 66, 149, 137, 125, 160]), ('state', '=', 'agreement'), ('date_start', '!=', False), ('date_end_ex', '!=', False)])
+        agreement_tasks = self.env['project.task'].search([('user_id', 'in', [91, 43, 98, 66, 149, 137, 125, 160]), ('state', '=', 'agreement'), ('date_start', '!=', False), ('date_end_ex', '!=', False)])
         log.info("Agreement tasks: %s", agreement_tasks)
         agreement_tasks.process_agreement_tasks()
         log.info("Finished cron")
