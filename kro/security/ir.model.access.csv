@@ -52,3 +52,5 @@ h2,h2,document_page.model_document_page,group_project_aim,1,1,1,0
 h3,h3,document_page.model_document_page,group_project_obs,1,1,1,0
 h4,h4,document_page.model_document_page,group_project_obs_max,1,1,1,0
 h5,h5,document_page.model_document_page,group_problem_subscribers,1,1,1,0
+
+i0,i0,model_res_users_blocking,project.group_project_user,1,1,1,1

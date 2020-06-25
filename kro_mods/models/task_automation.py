@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
 from openerp import models, api, fields
-from datetime import datetime
 import logging
+import re
 import time
 import pytz
-import numpy as np
-import pytz
+from business_duration import businessDuration
+from datetime import datetime
+
 
 log = logging.getLogger(__name__)
 DONE_STAGES = ['stating', 'stated', 'approvement', 'approved', 'finished']
@@ -140,13 +141,14 @@ class TaskMod(models.Model):
         return 0
 
     @api.multi
-    def get_note_busday_period(self, note):
+    def get_note_bushours_period(self, note):
         # now and dates in notifications_history are UTC+5
-        now_ekt = datetime.now(pytz.timezone('Asia/Yekaterinburg')).replace(tzinfo=None).date()
+        now_ekt = datetime.now(pytz.timezone('Asia/Yekaterinburg')).replace(tzinfo=None)
         for l in self.notifications_history.splitlines():
             if l.split('\t')[1] == note:
-                date = datetime.strptime(l.split('\t')[0][:19], '%Y-%m-%d %H:%M:%S')
-                return np.busday_count(date.date(), now_ekt)
+                notification_moment = datetime.strptime(l.split('\t')[0][:19], '%Y-%m-%d %H:%M:%S')
+                res = businessDuration(notification_moment, now_ekt, unit='hour')
+                return res
         return 0
 
     @api.model
@@ -179,6 +181,7 @@ class TaskMod(models.Model):
             try:
                 if rec.is_agreed():
                     rec.state = 'assigned'
+                    rec.send_notification(rec.user_executor_id, "Прошу перейти в выполнение", u"Перейти в выполнение")
                     self.env.cr.commit()
                     continue
                 elif 'Agreement blocked' in rec.notifications_history:  # TODO filter it initially
@@ -188,25 +191,25 @@ class TaskMod(models.Model):
                 elif 'Agreement expired by supervisor' in rec.notifications_history:  # TODO filter it initially
                     continue
                 elif 'Agreement executors supervisor assigned' in rec.notifications_history:
-                    if rec.get_note_busday_period('Agreement executors supervisor assigned') > 1:
+                    if rec.get_note_bushours_period('Agreement executors supervisor assigned') > 24:
                         if rec.user_executor_id and not rec.approved_by_executor:
                             rec.send_notification(olga, u"Просрочено руководителем", u"Просрочено руководителем")
                             rec.history_record('Agreement expired by supervisor')
                 elif 'Agreement 2' in rec.notifications_history:
-                    if rec.get_note_busday_period('Agreement 2') > 0:
+                    if rec.get_note_bushours_period('Agreement 2') > 24:
                         if rec.user_executor_id and not rec.approved_by_executor:
                             executor_blockers = rec.get_blocking_users(rec.user_executor_id)
                             if executor_blockers:
-                                period = np.busday_count(d(executor_blockers.create_date), now_utc.date())
-                                if period > 0 and 'Agreement blocked' not in rec.notifications_history:
+                                period = businessDuration(t(executor_blockers.create_date), now_utc, unit='hour')
+                                if period > 24 and 'Agreement blocked' not in rec.notifications_history:
                                     msg = u"Вопрошаемый не отвечает. Спрашивал исполнитель: %s. Вопрос задан: %s" % (executor_blockers.set_by_id.name, executor_blockers.user_id.name)
                                     rec.send_notification(rec.user_id, msg, u"Блокировка задания. Нет ответа.")
                                     rec.history_record('Agreement blocked')
                             else:
                                 last_answer = rec.get_last_answered_block(rec.user_executor_id)
                                 if last_answer:
-                                    period = np.busday_count(d(last_answer.answer_date), now_utc.date())
-                                    if period > 1:
+                                    period = businessDuration(t(last_answer.answer_date), now_utc, unit='hour')
+                                    if period > 24:
                                         if rec.user_executor_id.manager_id:
                                             rec.user_executor_id = rec.user_executor_id.manager_id
                                             msg = u"""Исполнитель заменен на его руководителя.  Иполнитель задал вопрос. На него был дан ответ. 
@@ -241,12 +244,12 @@ class TaskMod(models.Model):
                     if rec.user_predicator_id and not rec.approved_by_predicator:
                         rec.send_notification(rec.user_predicator_id, msg_text, subject)
                 elif 'Agreement 1' in rec.notifications_history:
-                    if rec.get_note_busday_period('Agreement 1') > 0:
+                    if rec.get_note_bushours_period('Agreement 1') > 24:
                         if rec.user_executor_id and not rec.approved_by_executor:
                             executor_blockers = rec.get_blocking_users(rec.user_executor_id)
                             if executor_blockers:
-                                period = np.busday_count(d(executor_blockers.create_date), now_utc.date())
-                                if period > 0 and 'Agreement blocked' not in rec.notifications_history:
+                                period = businessDuration(t(executor_blockers.create_date), now_utc, unit='hour')
+                                if period > 24 and 'Agreement blocked' not in rec.notifications_history:
                                     msg = u"Вопрошаемый не отвечает. Спрашивал исполнитель: %s. Вопрос задан: %s" % (executor_blockers.set_by_id.name, executor_blockers.user_id.name)
                                     rec.send_notification(rec.user_id, msg, u"Блокировка задания. Нет ответа.")
                                     rec.history_record('Agreement blocked')
@@ -255,8 +258,8 @@ class TaskMod(models.Model):
                             else:
                                 last_answer = rec.get_last_answered_block(rec.user_executor_id)
                                 if last_answer:
-                                    period = np.busday_count(d(last_answer.answer_date), now_utc.date())
-                                    if period > 0:
+                                    period = businessDuration(t(last_answer.answer_date), now_utc, unit='hour')
+                                    if period > 24:
                                         msg_text = u"""Задание не согласовывается, прошу сменить исполнителя. Иполнитель задал вопрос. На него был дан ответ. 
                                                        Прошло больше одного рабочего дня. Исполнитель не согласовал и не задал новых вопросов."""
                                         subject = u"Согласование просрочено"
@@ -314,37 +317,25 @@ class TaskMod(models.Model):
 
     @api.multi
     @api.returns('self', lambda value: value.id)
-    def message_post(self, body='', subject=None, message_type='notification', subtype=None, parent_id=False, attachments=None, content_subtype='html', **kwargs):
-        res = super(TaskMod, self).message_post(body=body, subject=subject, message_type=message_type, **kwargs)
+    def message_post(self, body='', subject=None, **kwargs):
+        res = super(TaskMod, self).message_post(body=body, subject=subject, **kwargs)
         # Set blocking_user_ids
         if self.state == 'agreement':
+            set_by_id = None
             if res.author_id == self.user_executor_id.partner_id and self.approved_by_executor is False:
-                for r in res.partner_ids:
-                    receiver = self.env['res.users'].search([('partner_id', '=', r.id)])
-                    new_block = self.env['res.users.blocking'].create(
-                        {'user_id': receiver.id,
-                         'task_id': self.id,
-                         'name': receiver.name,
-                         'set_by_id': self.user_executor_id.id,
-                         'message_id': res.id})
+                set_by_id = self.user_executor_id.id
             elif res.author_id == self.user_predicator_id.partner_id and self.approved_by_predicator is False:
-                for r in res.partner_ids:
-                    receiver = self.env['res.users'].search([('partner_id', '=', r.id)])
-                    new_block = self.env['res.users.blocking'].create(
-                        {'user_id': receiver.id,
-                         'task_id': self.id,
-                         'name': receiver.name,
-                         'set_by_id': self.user_predicator_id.id,
-                         'message_id': res.id})
+                set_by_id = self.user_predicator_id.id
             elif res.author_id == self.user_approver_id.partner_id and self.approved_by_approver is False:
-                for r in res.partner_ids:
-                    receiver = self.env['res.users'].search([('partner_id', '=', r.id)])
-                    new_block = self.env['res.users.blocking'].create(
-                        {'user_id': receiver.id,
-                         'task_id': self.id,
-                         'name': receiver.name,
-                         'set_by_id': self.user_approver_id.id,
-                         'message_id': res.id})
+                set_by_id = self.user_approver_id.id
+            if set_by_id and "model=res.partner&amp;id=" in res.body and len(res.body.split('data-oe-id="')) > 1:
+                partner_id = int(res.body.split('data-oe-id="')[1].split('" data-oe-model')[0])
+                receiver = self.env['res.users'].search([('partner_id', '=', partner_id)])
+                new_block = self.env['res.users.blocking'].create({'user_id': receiver.id,
+                                                                   'task_id': self.id,
+                                                                   'name': receiver.name,
+                                                                   'set_by_id': set_by_id,
+                                                                   'message_id': res.id})
         return res
 
 
