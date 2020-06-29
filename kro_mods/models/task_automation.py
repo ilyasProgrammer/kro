@@ -283,7 +283,7 @@ class TaskMod(models.Model):
     def cron_task_automation_execution(self):
         log.info("Started cron")
         now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
-        execution = self.env['project.task'].search([('state', '=', 'execution'), ('date_start', '<', now), ('date_end_ex', '!=', False)])
+        execution = self.env['project.task'].search([('state', '=', 'execution'), ('date_start', '!=', False), ('date_end_ex', '!=', False)])
         log.info("Execution tasks: %s", execution)
         execution.process_execution_tasks()
         log.info("Finished cron")
@@ -293,15 +293,28 @@ class TaskMod(models.Model):
         now_utc = datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
         for rec in self:
             try:
-                if 'Assigned 1' not in rec.notifications_history:
+                if rec.got('Execution 3'):
+                    continue
+                elif rec.ngot('Execution 1'):
                     period = businessDuration(now_utc, t(rec.date_end_ex), unit='hour')
                     if period < 25:
-                        rec.send_notification(rec.user_executor_id, u"Назначено", u"Разрешите Вам напомнить, что завтра дата выполнения задания заканчивается.")
-                        rec.history_record('Assigned 1')
-                if 'Assigned 1' in rec.notifications_history and 'Assigned 2' not in rec.notifications_history:
-                    msg = """Задача просрочена, срок выполнения истек. Прошу перевести в утверждение, если задача выполнена или указать срок выполнения со вторым переносом и причину переноса. Третий срок переноса недопустим"""
-                    rec.send_notification(rec.user_executor_id, u"Назначено просрочено ", msg)
-                    rec.history_record('Assigned 2')
+                        rec.send_notification(rec.user_executor_id, u"Разрешите Вам напомнить, что завтра дата выполнения задания заканчивается.", u"Выполнение")
+                        rec.history_record('Execution 1')
+                    else:
+                        rec.send_notification(rec.user_executor_id, u"Задание просрочено, срок выполнения истек. Прошу перевести в утверждение.", u"Выполнение")
+                        rec.history_record('Execution 1')
+                elif rec.ngot('Execution 2'):
+                    period = businessDuration(t(rec.date_end_ex), now_utc, unit='hour')
+                    if period > 0:
+                        msg = u"Задание просрочено, срок выполнения истек. Прошу перевести в утверждение, если задание выполнено или указать срок выполнения со вторым переносом и причину переноса. Третий срок переноса недопустим"
+                        rec.send_notification(rec.user_executor_id, msg, u"Выполнение просрочено")
+                        rec.history_record('Execution 2')
+                elif rec.got('Execution 2') and rec.ngot('Execution 3'):
+                    period = businessDuration(t(rec.date_end_ex), now_utc, unit='hour')
+                    if period > 24:
+                        msg = u"Сроки выполнения нарушены. Прошу перепланировать"
+                        rec.send_notification(rec.user_id, msg, u"Выполнение просрочено ")
+                        rec.history_record('Execution 3')
             except Exception as e:
                 log.error(rec)
                 log.error(e)
@@ -416,8 +429,24 @@ class TaskMod(models.Model):
                                                                    'message_id': res.id})
         return res
 
+    @api.multi
+    def got(self, note):
+        if note in self.notifications_history:
+            return True
+        else:
+            return False
+
+    @api.multi
+    def ngot(self, note):
+        if note in self.notifications_history:
+            return False
+        else:
+            return True
+
 
 def t(time_str):
+    if len(time_str) == 10:
+        return datetime.strptime(time_str, '%Y-%m-%d')
     return datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
 
 
