@@ -25,7 +25,8 @@ STATES = [('plan', u'Планирование'),
 
 class TaskMod(models.Model):
     _inherit = 'project.task'
-
+    
+    # PLAN
     @api.model
     def cron_task_automation_plan(self):
         # plan = self.env['project.task'].search([('state', '=', 'plan'), ('user_id', 'in', [43, 98, 91, 66, 149])])
@@ -41,58 +42,6 @@ class TaskMod(models.Model):
         plan_soon_start.process_plan_tasks_start_soon(base_url, kwargs)
         log.info("Finished cron")
     
-    @api.model
-    def cron_task_automation_assigned(self):
-        log.info("Started cron")
-        now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
-        assigned = self.env['project.task'].search([('state', '=', 'assigned'), ('date_start', '<', now), ('date_end_ex', '!=', False)])
-        log.info("Assigned tasks: %s", assigned)
-        assigned.process_assigned_tasks()
-        log.info("Finished cron")
-
-    @api.multi
-    def process_assigned_tasks(self):
-        now_utc = datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
-        for rec in self:
-            try:
-                if 'Assigned 3' in rec.notifications_history:
-                    continue
-                elif 'Assigned 1' not in rec.notifications_history:
-                    rec.send_notification(rec.user_executor_id, u"Прошу перейти в выполнение.", u"Перейти в выполнение")
-                    rec.history_record('Assigned 1')
-                elif 'Assigned 1' in rec.notifications_history and 'Assigned 2' not in rec.notifications_history:
-                    if rec.get_note_bushours_period('Agreement 1') > 24:
-                        rec.send_notification(rec.user_executor_id, u"Прошу перейти в выполнение 2й раз.", u"Перейти в выполнение. Повторно.")
-                        rec.history_record('Assigned 2')
-                elif 'Assigned 2' in rec.notifications_history and 'Assigned 3' not in rec.notifications_history:
-                    if rec.get_note_bushours_period('Agreement 2') > 24:
-                        msg = u"Действий нет, прошу сменить исполнителя."
-                        rec.send_notification(rec.user_id, msg, u"Назначено. Нет действий.")  # ОЗП
-                        if rec.user_executor_id.manager_id:
-                            rec.send_notification(rec.user_executor_id.manager_id, msg, u"Назначено. Нет действий.")
-                        rec.history_record('Assigned 3')
-            except Exception as e:
-                log.error(rec)
-                log.error(e)
-
-    @api.multi
-    def process_execution_tasks(self):
-        now_utc = datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
-        for rec in self:
-            try:
-                if 'Assigned 1' not in rec.notifications_history:
-                    period = businessDuration(now_utc, t(rec.date_end_ex), unit='hour')
-                    if period < 25:
-                        rec.send_notification(rec.user_executor_id, u"Назначено", u"Разрешите Вам напомнить, что завтра дата выполнения задания заканчивается.")
-                        rec.history_record('Assigned 1')
-                if 'Assigned 1' in rec.notifications_history and 'Assigned 2' not in rec.notifications_history:
-                    msg = """Задача просрочена, срок выполнения истек. Прошу перевести в утверждение, если задача выполнена или указать срок выполнения со вторым переносом и причину переноса. Третий срок переноса недопустим"""
-                    rec.send_notification(rec.user_executor_id, u"Назначено просрочено ", msg)
-                    rec.history_record('Assigned 2')
-            except Exception as e:
-                log.error(rec)
-                log.error(e)
-
     @api.multi
     def process_plan_tasks_start_soon(self, base_url, kwargs):
         now = datetime.now().date()
@@ -176,43 +125,8 @@ class TaskMod(models.Model):
             except Exception as e:
                 log.error(rec)
                 log.error(e)
-
-    @api.multi
-    def all_prev_tasks_are_done(self):
-        if len(self.depend_on_ids) > 0:
-            if len(self.depend_on_ids.filtered(lambda x: x.state in DONE_STAGES)) == len(self.depend_on_ids):
-                return True
-            else:
-                return False
-
-    @api.multi
-    def get_note_period(self, now, note):
-        for l in self.notifications_history.splitlines():
-            if l.split('\t')[1] == note:
-                date = datetime.strptime(l.split('\t')[0], '%Y-%m-%d %H:%M:%S.%f')
-                log.info("Rec %s Now %s date %s", self, now, date)
-                return (now - date).days
-        return 0
-
-    @api.multi
-    def get_state_date(self, state):
-        for l in reversed(self.state_history.splitlines()):
-            if l.split('\t')[1] == state:
-                date = datetime.strptime(l.split('\t')[0], '%Y-%m-%d %H:%M:%S')
-                return date
-        return 0
-
-    @api.multi
-    def get_note_bushours_period(self, note):
-        # now and dates in notifications_history are UTC+5
-        now_ekt = datetime.now(pytz.timezone('Asia/Yekaterinburg')).replace(tzinfo=None)
-        for l in self.notifications_history.splitlines():
-            if l.split('\t')[1] == note:
-                notification_moment = datetime.strptime(l.split('\t')[0][:19], '%Y-%m-%d %H:%M:%S')
-                res = businessDuration(notification_moment, now_ekt, unit='hour')
-                return res
-        return 0
-
+    
+    # AGREEMENT
     @api.model
     def cron_task_automation_agreement(self):
         log.info("Started cron")
@@ -220,20 +134,6 @@ class TaskMod(models.Model):
         log.info("Agreement tasks: %s", agreement_tasks)
         agreement_tasks.process_agreement_tasks()
         log.info("Finished cron")
-
-    @api.multi
-    def get_blocking_users(self, user_id):
-        for b in self.blocking_user_ids.sorted(key=lambda r: r.id, reverse=True):  # Take last one
-            if b.set_by_id == user_id and not b.answered:
-                return b
-        return False
-
-    @api.multi
-    def get_last_answered_block(self, user_id):
-        for b in self.blocking_user_ids.sorted(key=lambda r: r.id, reverse=True):  # Take last one
-            if b.set_by_id == user_id and b.answered:
-                return b
-        return False
 
     @api.multi
     def process_agreement_tasks(self):
@@ -343,6 +243,120 @@ class TaskMod(models.Model):
                 log.error(rec)
                 log.error(e)
 
+    # ASSIGNED
+    @api.model
+    def cron_task_automation_assigned(self):
+        log.info("Started cron")
+        now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
+        assigned = self.env['project.task'].search([('state', '=', 'assigned'), ('date_start', '<', now), ('date_end_ex', '!=', False)])
+        log.info("Assigned tasks: %s", assigned)
+        assigned.process_assigned_tasks()
+        log.info("Finished cron")
+
+    @api.multi
+    def process_assigned_tasks(self):
+        now_utc = datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
+        for rec in self:
+            try:
+                if 'Assigned 3' in rec.notifications_history:
+                    continue
+                elif 'Assigned 1' not in rec.notifications_history:
+                    rec.send_notification(rec.user_executor_id, u"Прошу перейти в выполнение.", u"Перейти в выполнение")
+                    rec.history_record('Assigned 1')
+                elif 'Assigned 1' in rec.notifications_history and 'Assigned 2' not in rec.notifications_history:
+                    if rec.get_note_bushours_period('Agreement 1') > 24:
+                        rec.send_notification(rec.user_executor_id, u"Прошу перейти в выполнение 2й раз.", u"Перейти в выполнение. Повторно.")
+                        rec.history_record('Assigned 2')
+                elif 'Assigned 2' in rec.notifications_history and 'Assigned 3' not in rec.notifications_history:
+                    if rec.get_note_bushours_period('Agreement 2') > 24:
+                        msg = u"Действий нет, прошу сменить исполнителя."
+                        rec.send_notification(rec.user_id, msg, u"Назначено. Нет действий.")  # ОЗП
+                        if rec.user_executor_id.manager_id:
+                            rec.send_notification(rec.user_executor_id.manager_id, msg, u"Назначено. Нет действий.")
+                        rec.history_record('Assigned 3')
+            except Exception as e:
+                log.error(rec)
+                log.error(e)
+
+    # EXECUTION
+    @api.model
+    def cron_task_automation_execution(self):
+        log.info("Started cron")
+        now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
+        execution = self.env['project.task'].search([('state', '=', 'execution'), ('date_start', '<', now), ('date_end_ex', '!=', False)])
+        log.info("Execution tasks: %s", execution)
+        execution.process_execution_tasks()
+        log.info("Finished cron")
+        
+    @api.multi
+    def process_execution_tasks(self):
+        now_utc = datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
+        for rec in self:
+            try:
+                if 'Assigned 1' not in rec.notifications_history:
+                    period = businessDuration(now_utc, t(rec.date_end_ex), unit='hour')
+                    if period < 25:
+                        rec.send_notification(rec.user_executor_id, u"Назначено", u"Разрешите Вам напомнить, что завтра дата выполнения задания заканчивается.")
+                        rec.history_record('Assigned 1')
+                if 'Assigned 1' in rec.notifications_history and 'Assigned 2' not in rec.notifications_history:
+                    msg = """Задача просрочена, срок выполнения истек. Прошу перевести в утверждение, если задача выполнена или указать срок выполнения со вторым переносом и причину переноса. Третий срок переноса недопустим"""
+                    rec.send_notification(rec.user_executor_id, u"Назначено просрочено ", msg)
+                    rec.history_record('Assigned 2')
+            except Exception as e:
+                log.error(rec)
+                log.error(e)
+
+    # Other
+    @api.multi
+    def all_prev_tasks_are_done(self):
+        if len(self.depend_on_ids) > 0:
+            if len(self.depend_on_ids.filtered(lambda x: x.state in DONE_STAGES)) == len(self.depend_on_ids):
+                return True
+            else:
+                return False
+
+    @api.multi
+    def get_note_period(self, now, note):
+        for l in self.notifications_history.splitlines():
+            if l.split('\t')[1] == note:
+                date = datetime.strptime(l.split('\t')[0], '%Y-%m-%d %H:%M:%S.%f')
+                log.info("Rec %s Now %s date %s", self, now, date)
+                return (now - date).days
+        return 0
+
+    @api.multi
+    def get_state_date(self, state):
+        for l in reversed(self.state_history.splitlines()):
+            if l.split('\t')[1] == state:
+                date = datetime.strptime(l.split('\t')[0], '%Y-%m-%d %H:%M:%S')
+                return date
+        return 0
+
+    @api.multi
+    def get_note_bushours_period(self, note):
+        # now and dates in notifications_history are UTC+5
+        now_ekt = datetime.now(pytz.timezone('Asia/Yekaterinburg')).replace(tzinfo=None)
+        for l in self.notifications_history.splitlines():
+            if l.split('\t')[1] == note:
+                notification_moment = datetime.strptime(l.split('\t')[0][:19], '%Y-%m-%d %H:%M:%S')
+                res = businessDuration(notification_moment, now_ekt, unit='hour')
+                return res
+        return 0
+  
+    @api.multi
+    def get_blocking_users(self, user_id):
+        for b in self.blocking_user_ids.sorted(key=lambda r: r.id, reverse=True):  # Take last one
+            if b.set_by_id == user_id and not b.answered:
+                return b
+        return False
+
+    @api.multi
+    def get_last_answered_block(self, user_id):
+        for b in self.blocking_user_ids.sorted(key=lambda r: r.id, reverse=True):  # Take last one
+            if b.set_by_id == user_id and b.answered:
+                return b
+        return False
+    
     @api.multi
     def is_agreed(self):
         self.ensure_one()
