@@ -8,9 +8,19 @@ import pytz
 from business_duration import businessDuration
 from datetime import datetime
 
-
 log = logging.getLogger(__name__)
 DONE_STAGES = ['stating', 'stated', 'approvement', 'approved', 'finished']
+STATES = [('plan', u'Планирование'),
+          ('agreement', u'Согласование'),
+          ('assigned', u'Назначено'),
+          ('execution', u'Выполнение'),
+          ('stating', u'Утверждение'),
+          ('stated', u'Утверждено'),
+          ('approvement', u'Подтверждение'),
+          ('approved', u'Подтверждено'),
+          ('finished', u'Завершено'),
+          ('correction', u'Коррекция'),
+          ]
 
 
 class TaskMod(models.Model):
@@ -30,6 +40,58 @@ class TaskMod(models.Model):
         log.info("Plan tasks soon start: %s", plan_soon_start)
         plan_soon_start.process_plan_tasks_start_soon(base_url, kwargs)
         log.info("Finished cron")
+    
+    @api.model
+    def cron_task_automation_assigned(self):
+        log.info("Started cron")
+        now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
+        assigned = self.env['project.task'].search([('state', '=', 'assigned'), ('date_start', '<', now), ('date_end_ex', '!=', False)])
+        log.info("Assigned tasks: %s", assigned)
+        assigned.process_assigned_tasks()
+        log.info("Finished cron")
+
+    @api.multi
+    def process_assigned_tasks(self):
+        now_utc = datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
+        for rec in self:
+            try:
+                if 'Assigned 3' in rec.notifications_history:
+                    continue
+                elif 'Assigned 1' not in rec.notifications_history:
+                    rec.send_notification(rec.user_executor_id, u"Прошу перейти в выполнение.", u"Перейти в выполнение")
+                    rec.history_record('Assigned 1')
+                elif 'Assigned 1' in rec.notifications_history and 'Assigned 2' not in rec.notifications_history:
+                    if rec.get_note_bushours_period('Agreement 1') > 24:
+                        rec.send_notification(rec.user_executor_id, u"Прошу перейти в выполнение 2й раз.", u"Перейти в выполнение. Повторно.")
+                        rec.history_record('Assigned 2')
+                elif 'Assigned 2' in rec.notifications_history and 'Assigned 3' not in rec.notifications_history:
+                    if rec.get_note_bushours_period('Agreement 2') > 24:
+                        msg = u"Действий нет, прошу сменить исполнителя."
+                        rec.send_notification(rec.user_id, msg, u"Назначено. Нет действий.")  # ОЗП
+                        if rec.user_executor_id.manager_id:
+                            rec.send_notification(rec.user_executor_id.manager_id, msg, u"Назначено. Нет действий.")
+                        rec.history_record('Assigned 3')
+            except Exception as e:
+                log.error(rec)
+                log.error(e)
+
+    @api.multi
+    def process_execution_tasks(self):
+        now_utc = datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
+        for rec in self:
+            try:
+                if 'Assigned 1' not in rec.notifications_history:
+                    period = businessDuration(now_utc, t(rec.date_end_ex), unit='hour')
+                    if period < 25:
+                        rec.send_notification(rec.user_executor_id, u"Назначено", u"Разрешите Вам напомнить, что завтра дата выполнения задания заканчивается.")
+                        rec.history_record('Assigned 1')
+                if 'Assigned 1' in rec.notifications_history and 'Assigned 2' not in rec.notifications_history:
+                    msg = """Задача просрочена, срок выполнения истек. Прошу перевести в утверждение, если задача выполнена или указать срок выполнения со вторым переносом и причину переноса. Третий срок переноса недопустим"""
+                    rec.send_notification(rec.user_executor_id, u"Назначено просрочено ", msg)
+                    rec.history_record('Assigned 2')
+            except Exception as e:
+                log.error(rec)
+                log.error(e)
 
     @api.multi
     def process_plan_tasks_start_soon(self, base_url, kwargs):
@@ -182,6 +244,8 @@ class TaskMod(models.Model):
                 if rec.is_agreed():
                     rec.state = 'assigned'
                     rec.send_notification(rec.user_executor_id, "Прошу перейти в выполнение", u"Перейти в выполнение")
+                    if 'Assigned 1' not in rec.notifications_history:
+                        rec.history_record('Assigned 1')
                     self.env.cr.commit()
                     continue
                 elif 'Agreement blocked' in rec.notifications_history:  # TODO filter it initially
