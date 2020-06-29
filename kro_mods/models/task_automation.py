@@ -130,7 +130,9 @@ class TaskMod(models.Model):
     @api.model
     def cron_task_automation_agreement(self):
         log.info("Started cron")
-        agreement_tasks = self.env['project.task'].search([('user_id', 'in', [91, 43, 98, 66, 149, 137, 125, 160]), ('state', '=', 'agreement'), ('date_start', '!=', False), ('date_end_ex', '!=', False)])
+        agreement_tasks = self.env['project.task'].search([('user_id', 'in', [91, 43, 98, 66, 149, 137, 125, 160]),
+                                                           ('state', '=', 'agreement'),
+                                                           ('date_start', '!=', False), ('date_end_ex', '!=', False)])
         log.info("Agreement tasks: %s", agreement_tasks)
         agreement_tasks.process_agreement_tasks()
         log.info("Finished cron")
@@ -248,7 +250,9 @@ class TaskMod(models.Model):
     def cron_task_automation_assigned(self):
         log.info("Started cron")
         now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
-        assigned = self.env['project.task'].search([('state', '=', 'assigned'), ('date_start', '<', now), ('date_end_ex', '!=', False)])
+        assigned = self.env['project.task'].search([('user_id', 'in', [91, 43, 98, 66, 149, 137, 125, 160]),
+                                                    ('state', '=', 'assigned'),
+                                                    ('date_start', '<', now), ('date_end_ex', '!=', False)])
         log.info("Assigned tasks: %s", assigned)
         assigned.process_assigned_tasks()
         log.info("Finished cron")
