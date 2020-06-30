@@ -133,7 +133,8 @@ class TaskMod(models.Model):
         agreement_tasks = self.env['project.task'].search([('state', '=', 'agreement'),
                                                            ('date_start', '!=', False), ('date_end_ex', '!=', False)])
         log.info("Agreement tasks: %s", agreement_tasks)
-        agreement_tasks.process_agreement_tasks()
+        if agreement_tasks:
+            agreement_tasks.process_agreement_tasks()
         log.info("Finished cron")
 
     @api.multi
