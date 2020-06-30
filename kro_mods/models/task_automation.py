@@ -130,8 +130,7 @@ class TaskMod(models.Model):
     @api.model
     def cron_task_automation_agreement(self):
         log.info("Started cron")
-        agreement_tasks = self.env['project.task'].search([('user_id', 'in', [91, 43, 98, 66, 149, 137, 125, 160]),
-                                                           ('state', '=', 'agreement'),
+        agreement_tasks = self.env['project.task'].search([('state', '=', 'agreement'),
                                                            ('date_start', '!=', False), ('date_end_ex', '!=', False)])
         log.info("Agreement tasks: %s", agreement_tasks)
         agreement_tasks.process_agreement_tasks()
@@ -286,10 +285,10 @@ class TaskMod(models.Model):
     @api.model
     def cron_task_automation_execution(self):
         log.info("Started cron")
-        now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
-        execution = self.env['project.task'].search([('state', '=', 'execution'), ('date_start', '!=', False), ('date_end_ex', '!=', False)])
-        log.info("Execution tasks: %s", execution)
-        execution.process_execution_tasks()
+        # now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
+        # execution = self.env['project.task'].search([('state', '=', 'execution'), ('date_start', '!=', False), ('date_end_ex', '!=', False)])
+        # log.info("Execution tasks: %s", execution)
+        # execution.process_execution_tasks()
         log.info("Finished cron")
         
     @api.multi
