@@ -52,13 +52,13 @@ class TaskMod(models.Model):
                 log.info("Date diff: %s %s", rec, str(date_diff))
                 message = ''
                 if 0 <= date_diff <= 3:
-                    if 'PLAN START SOON 1 note' not in rec.notifications_history:
+                    if rec.ngot('PLAN START SOON 1 note'):
                         rec.notifications_history += '%s\tPLAN START SOON 1 note\n' % str(now)
-                    elif 'PLAN START SOON 2 note' not in rec.notifications_history:
+                    elif rec.ngot('PLAN START SOON 2 note'):
                         rec.notifications_history += '%s\tPLAN START SOON 2 note\n' % str(now)
-                    elif 'PLAN START SOON 3 note' not in rec.notifications_history:
+                    elif rec.ngot('PLAN START SOON 3 note'):
                         rec.notifications_history += '%s\tPLAN START SOON 3 note\n' % str(now)
-                    elif 'PLAN START SOON 4 note' not in rec.notifications_history:
+                    elif rec.ngot('PLAN START SOON 4 note'):
                         rec.notifications_history += '%s\tPLAN START SOON 4 note\n' % str(now)
                 if message:
                     msg_text = u"Прошу вывести в согласование или перепланировать срок."
@@ -85,30 +85,30 @@ class TaskMod(models.Model):
                 date_diff = (now - date).days
                 log.info("Plan task date diff: %s %s", rec, str(date_diff))
                 log.info("Note 1 period: %s %s", rec, str(rec.get_note_period(now, 'PLAN 1 note')))
-                if date_diff > 31 and 'PLAN 1 note' not in rec.notifications_history:
+                if date_diff > 31 and rec.ngot('PLAN 1 note'):
                     msg_text = u"Прошу вывести задание из планирования или, если задание не актуально, то его завершить."
                     subject = u"Планирование > 31 дня"
                     rec.notifications_history += '%s\tPLAN 1 note\n' % str(now)
-                elif rec.get_note_period(now, 'PLAN 1 note') > 2 and 'PLAN 2 note' not in rec.notifications_history:
+                elif rec.get_note_period(now, 'PLAN 1 note') > 2 and rec.ngot('PLAN 2 note'):
                     subject = u"Планирование > 34 дней"
                     msg_text = u"При отсутствии ответа в течении 3х дней, с момента получения письма, задание автоматически перейдет в статус завершено."
                     rec.notifications_history += '%s\tPLAN 2 note\n' % str(now)
-                elif rec.get_note_period(now, 'PLAN 2 note') > 2 and 'PLAN 3 note' not in rec.notifications_history:
+                elif rec.get_note_period(now, 'PLAN 2 note') > 2 and rec.ngot('PLAN 3 note'):
                     subject = u"Планирование > 40 дней"
                     msg_text = u"Задание завершено."
                     rec.notifications_history += '%s\tPLAN 3 note\n' % str(now)
                     rec.state = 'finished'
                 elif len(rec.depend_on_ids) > 0 and rec.all_prev_tasks_are_done():
-                    if 'PLAN 1 depend on note' not in rec.notifications_history:
+                    if rec.ngot('PLAN 1 depend on note'):
                         subject = u"Предыдущие задачи утверждаются"
                         msg_text = u"Прошу вывести задание."
                         rec.notifications_history += '%s\tPLAN 1 depend on note\n' % str(now)
-                    elif 'PLAN 2 depend on note' not in rec.notifications_history:
+                    elif rec.ngot('PLAN 2 depend on note'):
                         if rec.get_note_period(now, 'PLAN 1 depend on note') > 2:
                             subject = u"Предыдущие задачи утверждаются"
                             msg_text = u"Прошу вывести задание 2й раз."
                             rec.notifications_history += '%s\tPLAN 2 depend on note\n' % str(now)
-                    elif 'PLAN depend on 14 days note' not in rec.notifications_history:
+                    elif rec.ngot('PLAN depend on 14 days note'):
                         if rec.get_note_period(now, 'PLAN 2 depend on note') > 13:
                             subject = u"14 Дней прошло"
                             msg_text = u"Задание неактуально, переведено в завершено."
@@ -146,28 +146,28 @@ class TaskMod(models.Model):
                 if rec.is_agreed():
                     rec.state = 'assigned'
                     rec.send_notification(rec.user_executor_id, "Прошу перейти в выполнение", u"Перейти в выполнение")
-                    if 'Assigned 1' not in rec.notifications_history:
+                    if rec.ngot('Assigned 1'):
                         rec.history_record('Assigned 1')
                     self.env.cr.commit()
                     continue
-                elif 'Agreement blocked' in rec.notifications_history:  # TODO filter it initially
+                elif rec.got('Agreement blocked'):  # TODO filter it initially
                     continue
-                elif 'Agreement no action' in rec.notifications_history:  # TODO filter it initially
+                elif rec.got('Agreement no action'):  # TODO filter it initially
                     continue
-                elif 'Agreement expired by supervisor' in rec.notifications_history:  # TODO filter it initially
+                elif rec.got('Agreement expired by supervisor'):  # TODO filter it initially
                     continue
-                elif 'Agreement executors supervisor assigned' in rec.notifications_history:
+                elif rec.got('Agreement executors supervisor assigned'):
                     if rec.get_note_bushours_period('Agreement executors supervisor assigned') > 24:
                         if rec.user_executor_id and not rec.approved_by_executor:
                             rec.send_notification(olga, u"Просрочено руководителем", u"Просрочено руководителем")
                             rec.history_record('Agreement expired by supervisor')
-                elif 'Agreement 2' in rec.notifications_history:
+                elif rec.got('Agreement 2'):
                     if rec.get_note_bushours_period('Agreement 2') > 24:
                         if rec.user_executor_id and not rec.approved_by_executor:
                             executor_blockers = rec.get_blocking_users(rec.user_executor_id)
                             if executor_blockers:
                                 period = businessDuration(t(executor_blockers.create_date), now_utc, unit='hour')
-                                if period > 24 and 'Agreement blocked' not in rec.notifications_history:
+                                if period > 24 and rec.ngot('Agreement blocked'):
                                     msg = u"Вопрошаемый не отвечает. Спрашивал исполнитель: %s. Вопрос задан: %s" % (executor_blockers.set_by_id.name, executor_blockers.user_id.name)
                                     rec.send_notification(rec.user_id, msg, u"Блокировка задания. Нет ответа.")
                                     rec.history_record('Agreement blocked')
@@ -199,7 +199,7 @@ class TaskMod(models.Model):
                                         msg = u"""Сроки согласования просрочены и у исполнителя нет руководителя. Задание заблокировано."""
                                         rec.send_notification(rec.user_id, msg, u"Нет руководителя у исполнителя")  # ОЗП
                                         rec.history_record('Agreement blocked\texecutor')
-                elif 'Agreement 1' not in rec.notifications_history:
+                elif rec.ngot('Agreement 1'):
                     msg_text = u"Прошу согласовать в течение 24 часов."
                     subject = u"Согласование"
                     rec.history_record('Agreement 1')
@@ -209,13 +209,13 @@ class TaskMod(models.Model):
                         rec.send_notification(rec.user_approver_id, msg_text, subject)
                     if rec.user_predicator_id and not rec.approved_by_predicator:
                         rec.send_notification(rec.user_predicator_id, msg_text, subject)
-                elif 'Agreement 1' in rec.notifications_history:
+                elif rec.got('Agreement 1'):
                     if rec.get_note_bushours_period('Agreement 1') > 24:
                         if rec.user_executor_id and not rec.approved_by_executor:
                             executor_blockers = rec.get_blocking_users(rec.user_executor_id)
                             if executor_blockers:
                                 period = businessDuration(t(executor_blockers.create_date), now_utc, unit='hour')
-                                if period > 24 and 'Agreement blocked' not in rec.notifications_history:
+                                if period > 24 and rec.ngot('Agreement blocked'):
                                     msg = u"Вопрошаемый не отвечает. Спрашивал исполнитель: %s. Вопрос задан: %s" % (executor_blockers.set_by_id.name, executor_blockers.user_id.name)
                                     rec.send_notification(rec.user_id, msg, u"Блокировка задания. Нет ответа.")
                                     rec.history_record('Agreement blocked')
@@ -262,16 +262,16 @@ class TaskMod(models.Model):
         now_utc = datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
         for rec in self:
             try:
-                if 'Assigned 3' in rec.notifications_history:
+                if rec.got('Assigned 3'):
                     continue
-                elif 'Assigned 1' not in rec.notifications_history:
+                elif rec.ngot('Assigned 1'):
                     rec.send_notification(rec.user_executor_id, u"Прошу перейти в выполнение.", u"Перейти в выполнение")
                     rec.history_record('Assigned 1')
-                elif 'Assigned 1' in rec.notifications_history and 'Assigned 2' not in rec.notifications_history:
+                elif rec.got('Assigned 1') and rec.ngot('Assigned 2'):
                     if rec.get_note_bushours_period('Agreement 1') > 24:
                         rec.send_notification(rec.user_executor_id, u"Прошу перейти в выполнение 2й раз.", u"Перейти в выполнение. Повторно.")
                         rec.history_record('Assigned 2')
-                elif 'Assigned 2' in rec.notifications_history and 'Assigned 3' not in rec.notifications_history:
+                elif rec.got('Assigned 2') and rec.ngot('Assigned 3'):
                     if rec.get_note_bushours_period('Agreement 2') > 24:
                         msg = u"Действий нет, прошу сменить исполнителя."
                         rec.send_notification(rec.user_id, msg, u"Назначено. Нет действий.")  # ОЗП
@@ -435,6 +435,9 @@ class TaskMod(models.Model):
 
     @api.multi
     def got(self, note):
+        if self.notifications_history is False:
+            self.notifications_history = ''
+            return False
         if note in self.notifications_history:
             return True
         else:
@@ -442,6 +445,9 @@ class TaskMod(models.Model):
 
     @api.multi
     def ngot(self, note):
+        if self.notifications_history is False:
+            self.notifications_history = ''
+            return True
         if note in self.notifications_history:
             return False
         else:
