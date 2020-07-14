@@ -161,6 +161,16 @@ class TaskMod(models.Model):
                         if rec.user_executor_id and not rec.approved_by_executor:
                             rec.send_notification(olga, u"Просрочено руководителем", u"Просрочено руководителем")
                             rec.history_record('Agreement expired by supervisor')
+                elif rec.got('Agreement approver supervisor assigned'):
+                    if rec.get_note_bushours_period('Agreement approver supervisor assigned') > 24:
+                        if rec.user_approver_id and not rec.approved_by_approver:
+                            rec.send_notification(olga, u"Просрочено руководителем", u"Просрочено руководителем")
+                            rec.history_record('Agreement expired by supervisor')
+                elif rec.got('Agreement predicator supervisor assigned'):
+                    if rec.get_note_bushours_period('Agreement predicator supervisor assigned') > 24:
+                        if rec.user_predicator_id and not rec.approved_by_predicator:
+                            rec.send_notification(olga, u"Просрочено руководителем", u"Просрочено руководителем")
+                            rec.history_record('Agreement expired by supervisor')
                 elif rec.got('Agreement 2'):
                     if rec.get_note_bushours_period('Agreement 2') > 24:
                         if rec.user_executor_id and not rec.approved_by_executor:
@@ -172,7 +182,8 @@ class TaskMod(models.Model):
                                     rec.send_notification(rec.user_id, msg, u"Блокировка задания. Нет ответа.")
                                     rec.history_record('Agreement blocked')
                             else:
-                                last_answer = rec.get_last_answered_block(rec.user_executor_id)
+                                # last_answer = rec.get_last_answered_block(rec.user_executor_id)
+                                last_answer = False
                                 if last_answer:
                                     period = businessDuration(t(last_answer.answer_date), now_utc, unit='hour')
                                     if period > 24:
@@ -199,6 +210,24 @@ class TaskMod(models.Model):
                                         msg = u"""Сроки согласования просрочены и у исполнителя нет руководителя. Задание заблокировано."""
                                         rec.send_notification(rec.user_id, msg, u"Нет руководителя у исполнителя")  # ОЗП
                                         rec.history_record('Agreement blocked\texecutor')
+                        if rec.user_approver_id and not rec.approved_by_approver:
+                            if rec.user_approver_id.manager_id:
+                                rec.user_approver_id = rec.user_approver_id.manager_id
+                                rec.send_notification(rec.user_id, u"Подтверждающий заменен на его руководителя. Нет согласования больше 3х рабочих дней.", u"Автозамена подтверждающего")  # ОЗП
+                                rec.history_record('Agreement approver supervisor assigned')
+                            else:
+                                msg = u"""Сроки согласования просрочены и у подтверждающего нет руководителя. Задание заблокировано."""
+                                rec.send_notification(rec.user_id, msg, u"Нет руководителя у подтверждающего")  # ОЗП
+                                rec.history_record('Agreement blocked\tapprover')
+                        if rec.user_predicator_id and not rec.approved_by_predicator:
+                            if rec.user_predicator_id.manager_id:
+                                rec.user_predicator_id = rec.user_predicator_id.manager_id
+                                rec.send_notification(rec.user_id, u"Утверждающий заменен на его руководителя. Нет согласования больше 3х рабочих дней.", u"Автозамена утверждающего")  # ОЗП
+                                rec.history_record('Agreement predicator supervisor assigned')
+                            else:
+                                msg = u"""Сроки согласования просрочены и у утверждающего нет руководителя. Задание заблокировано."""
+                                rec.send_notification(rec.user_id, msg, u"Нет руководителя у утверждающего")  # ОЗП
+                                rec.history_record('Agreement blocked\tpredicator')
                 elif rec.ngot('Agreement 1'):
                     msg_text = u"Прошу согласовать в течение 24 часов."
                     subject = u"Согласование"
@@ -241,6 +270,18 @@ class TaskMod(models.Model):
                                     rec.send_notification(rec.user_executor_id, msg_text, subject)
                                     rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
                                     rec.history_record('Agreement 2\texecutor')
+                        if rec.user_approver_id and not rec.approved_by_approver:
+                            msg_text = u"Задание не согласовывается. Подтверждающий не проявляет активности больше 1 рабочего дня."
+                            subject = u"Согласование просрочено. Прошло 48 часов."
+                            rec.send_notification(rec.user_executor_id, msg_text, subject)
+                            rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
+                            rec.history_record('Agreement 2\tapprover')
+                        if rec.user_predicator_id and not rec.approved_by_predicator:
+                            msg_text = u"Задание не согласовывается. Утверждающий не проявляет активности больше 1 рабочего дня."
+                            subject = u"Согласование просрочено. Прошло 48 часов."
+                            rec.send_notification(rec.user_executor_id, msg_text, subject)
+                            rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
+                            rec.history_record('Agreement 2\tpredicator')
                 self.env.cr.commit()
             except Exception as e:
                 log.error(rec)
