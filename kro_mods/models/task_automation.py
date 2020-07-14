@@ -273,13 +273,13 @@ class TaskMod(models.Model):
                         if rec.user_approver_id and not rec.approved_by_approver:
                             msg_text = u"Задание не согласовывается. Подтверждающий не проявляет активности больше 1 рабочего дня."
                             subject = u"Согласование просрочено. Прошло 48 часов."
-                            rec.send_notification(rec.user_executor_id, msg_text, subject)
+                            rec.send_notification(rec.user_approver_id, msg_text, subject)
                             rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
                             rec.history_record('Agreement 2\tapprover')
                         if rec.user_predicator_id and not rec.approved_by_predicator:
                             msg_text = u"Задание не согласовывается. Утверждающий не проявляет активности больше 1 рабочего дня."
                             subject = u"Согласование просрочено. Прошло 48 часов."
-                            rec.send_notification(rec.user_executor_id, msg_text, subject)
+                            rec.send_notification(rec.user_predicator_id, msg_text, subject)
                             rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
                             rec.history_record('Agreement 2\tpredicator')
                 self.env.cr.commit()
