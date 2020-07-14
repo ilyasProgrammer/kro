@@ -222,7 +222,8 @@ class TaskMod(models.Model):
                                 else:
                                     pass  # Вопрос задан < 24 часов назад. Еще есть время ответить
                             else:
-                                last_answer = rec.get_last_answered_block(rec.user_executor_id)
+                                last_answer = False
+                                # last_answer = rec.get_last_answered_block(rec.user_executor_id)
                                 if last_answer:
                                     period = businessDuration(t(last_answer.answer_date), now_utc, unit='hour')
                                     if period > 24:
