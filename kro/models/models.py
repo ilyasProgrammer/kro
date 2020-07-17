@@ -544,8 +544,8 @@ class Task(models.Model):
     admin = fields.Boolean(compute='_compute_fields', default=False, store=False, readonly=True)
     doc_count = fields.Integer(compute='_get_attached_docs', string="Количество прикрепленных вложений")
     private = fields.Boolean(default=False, string=u'Приватный')
-    blocking_user_ids = fields.One2many('res.users.blocking', 'task_id', string=u'Блокирующие')
-    state_history = fields.Text(u'История статусов', default="")
+    blocking_user_ids = fields.One2many('res.users.blocking', 'task_id', string=u'Блокирующие', copy=False)
+    state_history = fields.Text(u'История статусов', default="", copy=False)
 
     @api.multi
     def _message_notification_recipients(self, message, recipients):
