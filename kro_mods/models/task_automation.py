@@ -4,6 +4,7 @@ from openerp import models, api, fields
 import logging
 import re
 import time
+import math
 import pytz
 from business_duration import businessDuration
 from datetime import datetime
@@ -345,7 +346,7 @@ class TaskMod(models.Model):
                     if period < 25:
                         rec.send_notification(rec.user_executor_id, u"Разрешите Вам напомнить, что завтра дата выполнения задания заканчивается.", u"Выполнение")
                         rec.history_record('Execution 1')
-                    else:
+                    elif period < 1 or math.isnan(period):
                         rec.send_notification(rec.user_executor_id, u"Задание просрочено, срок выполнения истек. Прошу перевести в утверждение.", u"Выполнение")
                         rec.history_record('Execution 1')
                 elif rec.ngot('Execution 2'):
