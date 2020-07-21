@@ -360,6 +360,7 @@ class TaskMod(models.Model):
                         msg = u"Сроки выполнения нарушены. Прошу перепланировать"
                         rec.send_notification(rec.user_id, msg, u"Выполнение просрочено ")
                         rec.history_record('Execution 3')
+                time.sleep(1)
             except Exception as e:
                 log.error(rec)
                 log.error(e)
