@@ -3,50 +3,86 @@
     <data>
         <record model="ir.cron" id="cron_task_automation_plan">
             <field name='name'>KRO: Tasks Reminders and Automation - PLAN</field>
-            <field name='interval_number'>3</field>
-            <field name='interval_type'>hours</field>
+            <field name='interval_number'>30</field>
+            <field name='interval_type'>minutes</field>
             <field name="numbercall">-1</field>
             <field name="active">False</field>
             <field name="doall" eval="False"/>
             <field name="model">project.task</field>
             <field name="function">cron_task_automation_plan</field>
-            <field name="priority" eval="1"/>
+            <field name="priority" eval="11"/>
             <field name="args">()</field>
         </record>
         <record model="ir.cron" id="cron_task_automation_agreement">
             <field name='name'>KRO: Tasks Reminders and Automation - AGREEMENT</field>
-            <field name='interval_number'>3</field>
-            <field name='interval_type'>hours</field>
+            <field name='interval_number'>30</field>
+            <field name='interval_type'>minutes</field>
             <field name="numbercall">-1</field>
             <field name="active">False</field>
             <field name="doall" eval="False"/>
             <field name="model">project.task</field>
             <field name="function">cron_task_automation_agreement</field>
-            <field name="priority" eval="2"/>
+            <field name="priority" eval="12"/>
             <field name="args">()</field>
         </record>
         <record model="ir.cron" id="cron_task_assigned_plan">
             <field name='name'>KRO: Tasks Reminders and Automation - ASSIGNED</field>
-            <field name='interval_number'>3</field>
-            <field name='interval_type'>hours</field>
+            <field name='interval_number'>30</field>
+            <field name='interval_type'>minutes</field>
             <field name="numbercall">-1</field>
             <field name="active">False</field>
             <field name="doall" eval="False"/>
             <field name="model">project.task</field>
             <field name="function">cron_task_automation_assigned</field>
-            <field name="priority" eval="3"/>
+            <field name="priority" eval="13"/>
             <field name="args">()</field>
         </record>
         <record model="ir.cron" id="cron_task_automation_execution">
             <field name='name'>KRO: Tasks Reminders and Automation - EXECUTION</field>
-            <field name='interval_number'>3</field>
-            <field name='interval_type'>hours</field>
+            <field name='interval_number'>30</field>
+            <field name='interval_type'>minutes</field>
             <field name="numbercall">-1</field>
             <field name="active">False</field>
             <field name="doall" eval="False"/>
             <field name="model">project.task</field>
             <field name="function">cron_task_automation_execution</field>
-            <field name="priority" eval="4"/>
+            <field name="priority" eval="14"/>
+            <field name="args">()</field>
+        </record>
+        <record model="ir.cron" id="cron_task_automation_stating">
+            <field name='name'>KRO: Tasks Reminders and Automation - STATING</field>
+            <field name='interval_number'>30</field>
+            <field name='interval_type'>minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="active">False</field>
+            <field name="doall" eval="False"/>
+            <field name="model">project.task</field>
+            <field name="function">cron_task_automation_stating</field>
+            <field name="priority" eval="15"/>
+            <field name="args">()</field>
+        </record>
+        <record model="ir.cron" id="cron_task_automation_approvement">
+            <field name='name'>KRO: Tasks Reminders and Automation - APPROVEMENT</field>
+            <field name='interval_number'>30</field>
+            <field name='interval_type'>minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="active">False</field>
+            <field name="doall" eval="False"/>
+            <field name="model">project.task</field>
+            <field name="function">cron_task_automation_approvement</field>
+            <field name="priority" eval="16"/>
+            <field name="args">()</field>
+        </record>
+        <record model="ir.cron" id="cron_task_automation_finished">
+            <field name='name'>KRO: Tasks Reminders and Automation - FINISHED</field>
+            <field name='interval_number'>30</field>
+            <field name='interval_type'>minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="active">False</field>
+            <field name="doall" eval="False"/>
+            <field name="model">project.task</field>
+            <field name="function">cron_task_automation_finished</field>
+            <field name="priority" eval="17"/>
             <field name="args">()</field>
         </record>
     </data>

@@ -366,6 +366,123 @@ class TaskMod(models.Model):
                 log.error(rec)
                 log.error(e)
 
+    # STATING - Утверждение
+    @api.model
+    def cron_task_automation_stating(self):
+        log.info("Started cron")
+        stating = self.env['project.task'].search([('state', '=', 'stating'), ('approved_by_predicator', '=', False)])
+        log.info("Stating tasks: %s", stating)
+        stating.process_stating_tasks()
+        log.info("Finished cron")
+
+    @api.multi
+    def process_stating_tasks(self):
+        now_utc = datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
+        for rec in self:
+            try:
+                if rec.got('Stating 3'):
+                    continue
+                elif rec.ngot('Stating 1'):
+                    rec.send_notification(rec.user_predicator_id, u"Прошу утвердить в срок до %s" % str(rec.date_end_pr) , u"Утверждение")
+                    rec.history_record('Stating 1')
+                elif rec.ngot('Stating 2'):
+                    period = businessDuration(t(rec.date_end_pr), now_utc, unit='hour')
+                    if period > 0:
+                        msg = u"Задание просрочено, срок утверждения истек. Прошу перевести в утверждено, если результат по заданию принят или указать срок утверждения со вторым переносом и причину переноса. Третий срок переноса недопустим"
+                        rec.send_notification(rec.user_predicator_id, msg, u"Утверждение просрочено")
+                        rec.history_record('Stating 2')
+                elif rec.ngot('Stating 3'):
+                    period = businessDuration(t(rec.date_end_pr), now_utc, unit='hour')
+                    if period > 24:
+                        msg = u"Сроки утверждения нарушены. Прошу перепланировать."
+                        rec.send_notification(rec.user_id, msg, u"Утверждение просрочено")
+                        rec.history_record('Stating 3')
+                time.sleep(1)
+            except Exception as e:
+                log.error(rec)
+                log.error(e)
+                
+    # APPROVEMENT - Подтверждение
+    @api.model
+    def cron_task_automation_approvement(self):
+        log.info("Started cron")
+        approvement = self.env['project.task'].search([('state', '=', 'approvement'), ('approved_by_approver', '=', False), ('got_approver', '=', True)])
+        log.info("Approvement tasks: %s", approvement)
+        approvement.process_approvement_tasks()
+        log.info("Finished cron")
+
+    @api.multi
+    def process_approvement_tasks(self):
+        now_utc = datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
+        for rec in self:
+            try:
+                if rec.got('Approvement 3'):
+                    continue
+                elif rec.ngot('Approvement 1'):
+                    rec.send_notification(rec.user_approver_id, u"Прошу подтвердить в срок до %s" % str(rec.date_end_ap) , u"Подтверждение")
+                    rec.history_record('Approvement 1')
+                elif rec.ngot('Approvement 2'):
+                    period = businessDuration(t(rec.date_end_pr), now_utc, unit='hour')
+                    if period > 0:
+                        msg = u"""Задание просрочено, срок подтверждения истек. 
+                                  Прошу перевести в подтверждено, если результат задания принято, или указать срок подтверждения со вторым переносом и причину переноса. 
+                                  Третий срок переноса недопустим."""
+                        rec.send_notification(rec.user_approver_id, msg, u"Подтверждение просрочено")
+                        rec.history_record('Approvement 2')
+                elif rec.ngot('Approvement 3'):
+                    period = businessDuration(t(rec.date_end_pr), now_utc, unit='hour')
+                    if period > 24:
+                        msg = u"Сроки подтверждения нарушены. Прошу перепланировать."
+                        rec.send_notification(rec.user_id, msg, u"Подтверждение просрочено")
+                        rec.history_record('Approvement 3')
+                time.sleep(1)
+            except Exception as e:
+                log.error(rec)
+                log.error(e)
+                
+    # FINISHED - Завершено
+    @api.model
+    def cron_task_automation_finished(self):
+        log.info("Started cron")
+        finished = self.env['project.task'].search([('state', '=', 'finished'), ('mark_result', '=', 0)])
+        log.info("Finished tasks: %s", finished)
+        finished.process_finished_tasks()
+        log.info("Finished cron")
+
+    @api.multi
+    def process_finished_tasks(self):
+        for rec in self:
+            try:
+                if rec.got('Finished 5'):
+                    continue
+                elif rec.ngot('Finished 1'):
+                    rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
+                    rec.history_record('Finished 1')
+                elif rec.ngot('Finished 2'):
+                    period = rec.get_note_bushours_period('Finished 1')
+                    if period > 24:
+                        rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
+                        rec.history_record('Finished 2')
+                elif rec.ngot('Finished 3'):
+                    period = rec.get_note_bushours_period('Finished 2')
+                    if period > 24:
+                        rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
+                        rec.history_record('Finished 3')
+                elif rec.ngot('Finished 4'):
+                    period = rec.get_note_bushours_period('Finished 3')
+                    if period > 24:
+                        rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
+                        rec.history_record('Finished 4')
+                elif rec.ngot('Finished 5'):
+                    period = rec.get_note_bushours_period('Finished 4')
+                    if period > 24:
+                        rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
+                        rec.history_record('Finished 5')
+                time.sleep(1)
+            except Exception as e:
+                log.error(rec)
+                log.error(e)
+
     # Other
     @api.multi
     def all_prev_tasks_are_done(self):

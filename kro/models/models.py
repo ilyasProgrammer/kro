@@ -727,6 +727,18 @@ class Task(models.Model):
                 # moment = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
                 moment = datetime.datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC')).strftime('%Y-%m-%d %H:%M:%S')
                 vals['state_history'] = (self.state_history or '') + "%s\t%s\t%s\t%s\n" % (moment, vals['state'], current_user.name, self.env.uid)
+                if vals['state'] == 'stated':
+                    if self.got_approver:
+                        vals['state'] = 'approvement'
+                    else:
+                        vals['state'] = 'finished'
+                        self.send_notification(self.user_id, u"Прошу поставить оценку результата.", u"Задание завершено")
+                        self.history_record('Finished')
+                if vals['state'] == 'approved':
+                    if self.got_approver:
+                        vals['state'] = 'finished'
+                        self.send_notification(self.user_id, u"Прошу поставить оценку результата.", u"Задание завершено")
+                        self.history_record('Finished')
         res = super(Task, self).write(vals=vals)
         return res
 
