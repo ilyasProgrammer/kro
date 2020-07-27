@@ -27,7 +27,7 @@ STATES = [('plan', u'Планирование'),
 class TaskMod(models.Model):
     _inherit = 'project.task'
     
-    # PLAN
+    # PLAN - Планирование
     @api.model
     def cron_task_automation_plan(self):
         # plan = self.env['project.task'].search([('state', '=', 'plan'), ('user_id', 'in', [43, 98, 91, 66, 149])])
@@ -127,7 +127,7 @@ class TaskMod(models.Model):
                 log.error(rec)
                 log.error(e)
     
-    # AGREEMENT
+    # AGREEMENT - Согласование
     @api.model
     def cron_task_automation_agreement(self):
         log.info("Started cron")
@@ -288,13 +288,14 @@ class TaskMod(models.Model):
                 log.error(rec)
                 log.error(e)
 
-    # ASSIGNED
+    # ASSIGNED - Назначено
     @api.model
     def cron_task_automation_assigned(self):
         log.info("Started cron")
         now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
-        assigned = self.env['project.task'].search([('state', '=', 'assigned'),
-                                                    ('date_start', '<', now), ('date_end_ex', '!=', False)])
+        assigned = self.env['project.task'].browse(21864)
+        # assigned = self.env['project.task'].search([('state', '=', 'assigned'),
+        #                                             ('date_start', '<', now), ('date_end_ex', '!=', False)])
         log.info("Assigned tasks: %s", assigned)
         assigned.process_assigned_tasks()
         log.info("Finished cron")
@@ -310,11 +311,11 @@ class TaskMod(models.Model):
                     rec.send_notification(rec.user_executor_id, u"Прошу перейти в выполнение.", u"Перейти в выполнение")
                     rec.history_record('Assigned 1')
                 elif rec.got('Assigned 1') and rec.ngot('Assigned 2'):
-                    if rec.get_note_bushours_period('Agreement 1') > 24:
+                    if rec.get_note_bushours_period('Assigned 1') > 24:
                         rec.send_notification(rec.user_executor_id, u"Прошу перейти в выполнение 2й раз.", u"Перейти в выполнение. Повторно.")
                         rec.history_record('Assigned 2')
                 elif rec.got('Assigned 2') and rec.ngot('Assigned 3'):
-                    if rec.get_note_bushours_period('Agreement 2') > 24:
+                    if rec.get_note_bushours_period('Assigned 2') > 24:
                         msg = u"Действий нет, прошу сменить исполнителя."
                         rec.send_notification(rec.user_id, msg, u"Назначено. Нет действий.")  # ОЗП
                         if rec.user_executor_id.manager_id:
@@ -324,7 +325,7 @@ class TaskMod(models.Model):
                 log.error(rec)
                 log.error(e)
 
-    # EXECUTION
+    # EXECUTION - Выполнение
     @api.model
     def cron_task_automation_execution(self):
         log.info("Started cron")
