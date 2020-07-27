@@ -3,6 +3,9 @@
 from openerp import models, fields, api, _
 import datetime
 import pytz
+from business_duration import businessDuration
+import math
+
 
 class Project(models.Model):
     _inherit = 'project.project'
@@ -727,18 +730,23 @@ class Task(models.Model):
                 # moment = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
                 moment = datetime.datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC')).strftime('%Y-%m-%d %H:%M:%S')
                 vals['state_history'] = (self.state_history or '') + "%s\t%s\t%s\t%s\n" % (moment, vals['state'], current_user.name, self.env.uid)
-                if vals['state'] == 'stated':
-                    if self.got_approver:
-                        vals['state'] = 'approvement'
-                    else:
-                        vals['state'] = 'finished'
-                        self.send_notification(self.user_id, u"Прошу поставить оценку результата.", u"Задание завершено")
-                        self.history_record('Finished')
-                if vals['state'] == 'approved':
-                    if self.got_approver:
-                        vals['state'] = 'finished'
-                        self.send_notification(self.user_id, u"Прошу поставить оценку результата.", u"Задание завершено")
-                        self.history_record('Finished')
+                if vals['state'] == 'stating':
+                    now_utc = datetime.datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
+                    period = businessDuration(t(self.date_end_ex), now_utc, unit='day')
+                    if math.isnan(period):
+                        vals['mark_state'] = 7
+                    elif period == 0:
+                        vals['mark_state'] = 6
+                    elif period == 1:
+                        vals['mark_state'] = 5
+                    elif period == 2:
+                        vals['mark_state'] = 4
+                    elif period == 3:
+                        vals['mark_state'] = 3
+                    elif period == 4 or period == 5:
+                        vals['mark_state'] = 2
+                    elif period > 5:
+                        vals['mark_state'] = 1
         res = super(Task, self).write(vals=vals)
         return res
 
@@ -769,3 +777,13 @@ def make_unique(original_list):
     unique_list = []
     [unique_list.append(obj) for obj in original_list if obj not in unique_list]
     return unique_list
+
+
+def t(time_str):
+    if len(time_str) == 10:
+        return datetime.datetime.strptime(time_str, '%Y-%m-%d')
+    return datetime.datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
+
+
+def d(time_str):
+    return datetime.datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S').date()

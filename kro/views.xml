@@ -580,7 +580,7 @@
             <xpath expr="//sheet//h1" position="replace">
                 <h4 class="o_row">
                     <field name="priority" widget="priority" nolabel="1"/>
-                    <span> Задание № </span>
+                    <label for="code" string="Задание №"/>
                     <field name="code" attrs="{'readonly': [('planner', '=', False)]}"/>
                 </h4>
                 <h3>

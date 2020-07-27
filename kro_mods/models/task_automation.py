@@ -182,6 +182,7 @@ class TaskMod(models.Model):
                                     msg = u"Вопрошаемый не отвечает. Спрашивал исполнитель: %s. Вопрос задан: %s" % (executor_blockers.set_by_id.name, executor_blockers.user_id.name)
                                     rec.send_notification(rec.user_id, msg, u"Блокировка задания. Нет ответа.")
                                     rec.history_record('Agreement blocked')
+                                    rec.state = 'correction'
                             else:
                                 # last_answer = rec.get_last_answered_block(rec.user_executor_id)
                                 last_answer = False
@@ -200,6 +201,7 @@ class TaskMod(models.Model):
                                                       Исполнитель не согласовал и не задал новых вопросов."""
                                             rec.send_notification(rec.user_id, msg, "Нет руководителя у исполнителя")  # ОЗП
                                             rec.history_record('Agreement blocked\texecutor')
+                                            rec.state = 'correction'
                                     else:
                                         pass  # Последний ответ был < 24 назад. Еще есть время среагировать
                                 else:
@@ -211,6 +213,7 @@ class TaskMod(models.Model):
                                         msg = u"""Сроки согласования просрочены и у исполнителя нет руководителя. Задание заблокировано."""
                                         rec.send_notification(rec.user_id, msg, u"Нет руководителя у исполнителя")  # ОЗП
                                         rec.history_record('Agreement blocked\texecutor')
+                                        rec.state = 'correction'
                         if rec.user_approver_id and not rec.approved_by_approver:
                             if rec.user_approver_id.manager_id:
                                 rec.user_approver_id = rec.user_approver_id.manager_id
@@ -220,6 +223,7 @@ class TaskMod(models.Model):
                                 msg = u"""Сроки согласования просрочены и у подтверждающего нет руководителя. Задание заблокировано."""
                                 rec.send_notification(rec.user_id, msg, u"Нет руководителя у подтверждающего")  # ОЗП
                                 rec.history_record('Agreement blocked\tapprover')
+                                rec.state = 'correction'
                         if rec.user_predicator_id and not rec.approved_by_predicator:
                             if rec.user_predicator_id.manager_id:
                                 rec.user_predicator_id = rec.user_predicator_id.manager_id
@@ -229,6 +233,7 @@ class TaskMod(models.Model):
                                 msg = u"""Сроки согласования просрочены и у утверждающего нет руководителя. Задание заблокировано."""
                                 rec.send_notification(rec.user_id, msg, u"Нет руководителя у утверждающего")  # ОЗП
                                 rec.history_record('Agreement blocked\tpredicator')
+                                rec.state = 'correction'
                 elif rec.ngot('Agreement 1'):
                     msg_text = u"Прошу согласовать в течение 24 часов."
                     subject = u"Согласование"
@@ -249,6 +254,7 @@ class TaskMod(models.Model):
                                     msg = u"Вопрошаемый не отвечает. Спрашивал исполнитель: %s. Вопрос задан: %s" % (executor_blockers.set_by_id.name, executor_blockers.user_id.name)
                                     rec.send_notification(rec.user_id, msg, u"Блокировка задания. Нет ответа.")
                                     rec.history_record('Agreement blocked')
+                                    rec.state = 'correction'
                                 else:
                                     pass  # Вопрос задан < 24 часов назад. Еще есть время ответить
                             else:
@@ -421,7 +427,7 @@ class TaskMod(models.Model):
                     rec.send_notification(rec.user_approver_id, u"Прошу подтвердить в срок до %s" % str(rec.date_end_ap) , u"Подтверждение")
                     rec.history_record('Approvement 1')
                 elif rec.ngot('Approvement 2'):
-                    period = businessDuration(t(rec.date_end_pr), now_utc, unit='hour')
+                    period = businessDuration(t(rec.date_end_ap), now_utc, unit='hour')
                     if period > 0:
                         msg = u"""Задание просрочено, срок подтверждения истек. 
                                   Прошу перевести в подтверждено, если результат задания принято, или указать срок подтверждения со вторым переносом и причину переноса. 
@@ -429,7 +435,7 @@ class TaskMod(models.Model):
                         rec.send_notification(rec.user_approver_id, msg, u"Подтверждение просрочено")
                         rec.history_record('Approvement 2')
                 elif rec.ngot('Approvement 3'):
-                    period = businessDuration(t(rec.date_end_pr), now_utc, unit='hour')
+                    period = businessDuration(t(rec.date_end_ap), now_utc, unit='hour')
                     if period > 24:
                         msg = u"Сроки подтверждения нарушены. Прошу перепланировать."
                         rec.send_notification(rec.user_id, msg, u"Подтверждение просрочено")
@@ -481,6 +487,28 @@ class TaskMod(models.Model):
             except Exception as e:
                 log.error(rec)
                 log.error(e)
+
+    # Автоперевод в Подвтерждение или Завершено
+    @api.model
+    def cron_task_automation_auto_state(self):
+        log.info("Started cron")
+        stated = self.env['project.task'].search([('state', '=', 'stated')])
+        log.info("Stated tasks: %s", stated)
+        for rec in stated:
+            if rec.got_approver:
+                rec.state = 'approvement'  # Подтверждение
+            else:
+                rec.state = 'finished'
+                rec.send_notification(rec.user_id, u"Прошу поставить оценку результата.", u"Задание завершено")
+                rec.history_record('Finished')
+        approved = self.env['project.task'].search([('state', '=', 'approved'), ('got_approver', '=', True)])
+        log.info("Approved tasks: %s", stated)
+        for rec in approved:
+            if rec.state == 'approved':  # Подтверждено
+                rec.state = 'finished'
+                rec.send_notification(rec.user_id, u"Прошу поставить оценку результата.", u"Задание завершено")
+                rec.history_record('Finished')
+        log.info("Finished cron")
 
     # Other
     @api.multi
@@ -560,12 +588,13 @@ class TaskMod(models.Model):
         self.ensure_one()
         base_url = self.env['ir.config_parameter'].get_param('web.base.url')
         kwargs = {'author_id': 1, 'subtype_id': 2}
-        body = """<a href="%s/web#model=res.partner&amp;id=%s" """ % (base_url, user.partner_id.id)
+        body = "<h3>%s</h3>" % subject
+        body += """<a href="%s/web#model=res.partner&amp;id=%s" """ % (base_url, user.partner_id.id)
         body += """class="cleaned_o_mail_redirect" data-oe-id="%s" """ % user.partner_id.id
         body += """data-oe-model="res.partner" target="_blank">@%s</a> """ % user.partner_id.name
         body += msg_text
         kwargs['partner_ids'] = [user.partner_id.id]
-        message = self.message_post(body=body, subject=subject, message_type="email", **kwargs)
+        message = self.message_post(body=body, subject=self.name, message_type="email", **kwargs)
         log.info('Sent message. %s %s %s', self, user.partner_id, message)
         time.sleep(1)
 

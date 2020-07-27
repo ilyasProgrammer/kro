@@ -11,6 +11,10 @@
             <field name="state_history" position='after'>
                 <field name="notifications_history"/>
             </field>
+            <field name="code" position='after'>
+                <label for="task_type"/>
+                <field name="task_type"/>
+            </field>
         </field>
     </record>
 
