@@ -292,6 +292,7 @@ class TaskMod(models.Model):
     @api.model
     def cron_task_automation_assigned(self):
         log.info("Started cron")
+        now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
         assigned = self.env['project.task'].search([('state', '=', 'assigned'),
                                                     ('date_start', '<', now), ('date_end_ex', '!=', False)])
         log.info("Assigned tasks: %s", assigned)
