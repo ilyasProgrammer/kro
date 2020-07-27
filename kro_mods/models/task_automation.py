@@ -369,7 +369,7 @@ class TaskMod(models.Model):
     @api.model
     def cron_task_automation_stating(self):
         log.info("Started cron")
-        stating = self.env['project.task'].search([('state', '=', 'stating'), ('approved_by_predicator', '=', False)])
+        stating = self.env['project.task'].search([('state', '=', 'stating')])
         log.info("Stating tasks: %s", stating)
         stating.process_stating_tasks()
         log.info("Finished cron")
@@ -405,7 +405,7 @@ class TaskMod(models.Model):
     @api.model
     def cron_task_automation_approvement(self):
         log.info("Started cron")
-        approvement = self.env['project.task'].search([('state', '=', 'approvement'), ('approved_by_approver', '=', False), ('got_approver', '=', True)])
+        approvement = self.env['project.task'].search([('state', '=', 'approvement'), ('got_approver', '=', True)])
         log.info("Approvement tasks: %s", approvement)
         approvement.process_approvement_tasks()
         log.info("Finished cron")
