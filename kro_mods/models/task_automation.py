@@ -292,17 +292,14 @@ class TaskMod(models.Model):
     @api.model
     def cron_task_automation_assigned(self):
         log.info("Started cron")
-        now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
-        assigned = self.env['project.task'].browse(21864)
-        # assigned = self.env['project.task'].search([('state', '=', 'assigned'),
-        #                                             ('date_start', '<', now), ('date_end_ex', '!=', False)])
+        assigned = self.env['project.task'].search([('state', '=', 'assigned'),
+                                                    ('date_start', '<', now), ('date_end_ex', '!=', False)])
         log.info("Assigned tasks: %s", assigned)
         assigned.process_assigned_tasks()
         log.info("Finished cron")
 
     @api.multi
     def process_assigned_tasks(self):
-        now_utc = datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
         for rec in self:
             try:
                 if rec.got('Assigned 3'):
