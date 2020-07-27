@@ -64,12 +64,13 @@ class TaskMod(models.Model):
                 if message:
                     msg_text = u"Прошу вывести в согласование или перепланировать срок."
                     subject = u"Сегодня начало" if date_diff == 0 else u"Скоро начало"
-                    body = """<a href="%s/web#model=res.partner&amp;id=%s" """ % (base_url, rec.user_id.partner_id.id)
+                    body = "<h3>%s</h3>" % subject
+                    body += """<a href="%s/web#model=res.partner&amp;id=%s" """ % (base_url, rec.user_id.partner_id.id)
                     body += """class="cleaned_o_mail_redirect" data-oe-id="%s" """ % rec.user_id.partner_id.id
                     body += """data-oe-model="res.partner" target="_blank">@%s</a> """ % rec.user_id.partner_id.name
                     body += msg_text
                     kwargs['partner_ids'] = [rec.user_id.partner_id.id]
-                    message = rec.message_post(body=body, subject=subject, message_type="email",  **kwargs)
+                    message = rec.message_post(body=body, subject=rec.name, message_type="email",  **kwargs)
                     log.info('Sent PLAN task message starting soon. %s %s', rec, message)
                     time.sleep(1)
             except Exception as e:
@@ -115,12 +116,13 @@ class TaskMod(models.Model):
                             msg_text = u"Задание неактуально, переведено в завершено."
                             rec.notifications_history += '%s\tPLAN depend on 14 days note\n' % str(now)
                 if msg_text:
-                    body = """<a href="%s/web#model=res.partner&amp;id=%s" """ % (base_url, rec.user_id.partner_id.id)
+                    body = "<h3>%s</h3>" % subject
+                    body += """<a href="%s/web#model=res.partner&amp;id=%s" """ % (base_url, rec.user_id.partner_id.id)
                     body += """class="cleaned_o_mail_redirect" data-oe-id="%s" """ % rec.user_id.partner_id.id
                     body += """data-oe-model="res.partner" target="_blank">@%s</a> """ % rec.user_id.partner_id.name
                     body += msg_text
                     kwargs['partner_ids'] = [rec.user_id.partner_id.id]
-                    message = rec.message_post(body=body, subject=subject, message_type="email",  **kwargs)
+                    message = rec.message_post(body=body, subject=rec.name, message_type="email",  **kwargs)
                     log.info('Sent PLAN task message. %s %s', rec, message)
                     time.sleep(1)
             except Exception as e:
