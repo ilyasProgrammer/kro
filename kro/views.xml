@@ -745,6 +745,7 @@
         <field name="arch" type="xml">
             <tree position="replace">
                 <tree string="Задания">
+                    <field name="id" string="ID"/>
                     <field name="job_id" string="Задача"/>
                     <field name="name" string="Задание"/>
                     <field name="state"/>

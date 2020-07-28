@@ -30,7 +30,6 @@ class TaskMod(models.Model):
     # PLAN - Планирование
     @api.model
     def cron_task_automation_plan(self):
-        # plan = self.env['project.task'].search([('state', '=', 'plan'), ('user_id', 'in', [43, 98, 91, 66, 149])])
         log.info("Started cron")
         now = datetime.now(pytz.timezone(self.env.context.get('tz') or 'UTC'))
         base_url = self.env['ir.config_parameter'].get_param('web.base.url')
@@ -460,31 +459,29 @@ class TaskMod(models.Model):
     def process_finished_tasks(self):
         for rec in self:
             try:
-                if rec.got('Finished 5'):
-                    continue
-                elif rec.ngot('Finished 1'):
+                if rec.ngot('Finished 1'):
                     rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
                     rec.history_record('Finished 1')
-                elif rec.ngot('Finished 2'):
-                    period = rec.get_note_bushours_period('Finished 1')
-                    if period > 24:
-                        rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
-                        rec.history_record('Finished 2')
-                elif rec.ngot('Finished 3'):
-                    period = rec.get_note_bushours_period('Finished 2')
-                    if period > 24:
-                        rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
-                        rec.history_record('Finished 3')
-                elif rec.ngot('Finished 4'):
-                    period = rec.get_note_bushours_period('Finished 3')
-                    if period > 24:
-                        rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
-                        rec.history_record('Finished 4')
-                elif rec.ngot('Finished 5'):
-                    period = rec.get_note_bushours_period('Finished 4')
-                    if period > 24:
-                        rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
-                        rec.history_record('Finished 5')
+                # elif rec.ngot('Finished 2'):
+                #     period = rec.get_note_bushours_period('Finished 1')
+                #     if period > 24:
+                #         rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
+                #         rec.history_record('Finished 2')
+                # elif rec.ngot('Finished 3'):
+                #     period = rec.get_note_bushours_period('Finished 2')
+                #     if period > 24:
+                #         rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
+                #         rec.history_record('Finished 3')
+                # elif rec.ngot('Finished 4'):
+                #     period = rec.get_note_bushours_period('Finished 3')
+                #     if period > 24:
+                #         rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
+                #         rec.history_record('Finished 4')
+                # elif rec.ngot('Finished 5'):
+                #     period = rec.get_note_bushours_period('Finished 4')
+                #     if period > 24:
+                #         rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
+                #         rec.history_record('Finished 5')
                 time.sleep(1)
             except Exception as e:
                 log.error(rec)
@@ -628,20 +625,20 @@ class TaskMod(models.Model):
         if self.notifications_history is False:
             self.notifications_history = ''
             return False
-        if note in self.notifications_history:
-            return True
-        else:
-            return False
+        for l in self.notifications_history.splitlines():
+            if l.split('\t')[1] == note:
+                return True
+        return False
 
     @api.multi
     def ngot(self, note):
         if self.notifications_history is False:
             self.notifications_history = ''
             return True
-        if note in self.notifications_history:
-            return False
-        else:
-            return True
+        for l in self.notifications_history.splitlines():
+            if l.split('\t')[1] == note:
+                return False
+        return True
 
 
 def t(time_str):

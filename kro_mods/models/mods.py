@@ -15,3 +15,39 @@ class TaskMod(models.Model):
     @api.onchange('user_executor_id')
     def onchange_user_executor_id(self):
         self.notifications_history = ''
+
+    @api.onchange('date_end_ex')
+    def onchange_date_end_ex(self):
+        self.history_record(u'Срок выполнения изменен\t%s->%s' % (self._origin.date_end_ex, self.date_end_ex))
+        self.archive_notification('Execution')
+
+    @api.onchange('date_end_pr')
+    def onchange_date_end_pr(self):
+        self.history_record(u'Срок утверждения изменен\t%s->%s' % (self._origin.date_end_pr, self.date_end_pr))
+        self.archive_notification('Stating')
+
+    @api.onchange('date_end_ap')
+    def onchange_date_end_ap(self):
+        self.history_record(u'Срок подтверждения изменен\t%s->%s' % (self._origin.date_end_ap, self.date_end_ap))
+        self.archive_notification('Approvement')
+
+    @api.onchange('user_predicator_id')
+    def onchange_user_predicator_id(self):
+        self.history_record(u'Утверждающий изменен\t%s->%s' % (self._origin.user_predicator_id.name, self.user_predicator_id.name))
+        self.archive_notification('Stating')
+
+    @api.onchange('user_approver_id')
+    def onchange_user_approver_id(self):
+        self.history_record(u'Подтверждающий изменен\t%s->%s' % (self._origin.user_approver_id.name, self.user_approver_id.name))
+        self.archive_notification('Approvement')
+
+    @api.multi
+    def archive_notification(self, note):
+        for r in self:
+            new_hist = ''
+            for l in r.notifications_history.splitlines():
+                if note in l.split('\t')[1].split():
+                    new_hist += '-\t' + l + '\n'
+                else:
+                    new_hist += l + '\n'
+            r.notifications_history = new_hist
