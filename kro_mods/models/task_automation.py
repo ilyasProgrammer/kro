@@ -580,7 +580,7 @@ class TaskMod(models.Model):
     def history_record(self, msg):
         now_ekt = datetime.now(pytz.timezone('Asia/Yekaterinburg')).replace(tzinfo=None).replace(microsecond=0)
         for rec in self:
-            rec.notifications_history += '%s\t%s\n' % (str(now_ekt), msg)
+            rec.notifications_history += '%s\t%s\n' % (str(now_ekt), msg or '')
 
     @api.multi
     def send_notification(self, user, msg_text, subject):
