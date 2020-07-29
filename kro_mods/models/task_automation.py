@@ -53,13 +53,13 @@ class TaskMod(models.Model):
                 message = ''
                 if 0 <= date_diff <= 3:
                     if rec.ngot('PLAN START SOON 1 note'):
-                        rec.notifications_history += '%s\tPLAN START SOON 1 note\n' % str(now)
+                        rec.history_record('PLAN START SOON 1 note')
                     elif rec.ngot('PLAN START SOON 2 note'):
-                        rec.notifications_history += '%s\tPLAN START SOON 2 note\n' % str(now)
+                        rec.history_record('PLAN START SOON 2 note')
                     elif rec.ngot('PLAN START SOON 3 note'):
-                        rec.notifications_history += '%s\tPLAN START SOON 3 note\n' % str(now)
+                        rec.history_record('PLAN START SOON 3 note')
                     elif rec.ngot('PLAN START SOON 4 note'):
-                        rec.notifications_history += '%s\tPLAN START SOON 4 note\n' % str(now)
+                        rec.history_record('PLAN START SOON 4 note')
                 if message:
                     msg_text = u"Прошу вывести в согласование или перепланировать срок."
                     subject = u"Сегодня начало" if date_diff == 0 else u"Скоро начало"
@@ -89,31 +89,31 @@ class TaskMod(models.Model):
                 if date_diff > 31 and rec.ngot('PLAN 1 note'):
                     msg_text = u"Прошу вывести задание из планирования или, если задание не актуально, то его завершить."
                     subject = u"Планирование > 31 дня"
-                    rec.notifications_history += '%s\tPLAN 1 note\n' % str(now)
+                    rec.history_record('PLAN 1 note')
                 elif rec.get_note_period(now, 'PLAN 1 note') > 2 and rec.ngot('PLAN 2 note'):
                     subject = u"Планирование > 34 дней"
                     msg_text = u"При отсутствии ответа в течении 3х дней, с момента получения письма, задание автоматически перейдет в статус завершено."
-                    rec.notifications_history += '%s\tPLAN 2 note\n' % str(now)
+                    rec.history_record('PLAN 2 note')
                 elif rec.get_note_period(now, 'PLAN 2 note') > 2 and rec.ngot('PLAN 3 note'):
                     subject = u"Планирование > 40 дней"
                     msg_text = u"Задание завершено."
-                    rec.notifications_history += '%s\tPLAN 3 note\n' % str(now)
+                    rec.history_record('PLAN 3 note')
                     rec.state = 'finished'
                 elif len(rec.depend_on_ids) > 0 and rec.all_prev_tasks_are_done():
                     if rec.ngot('PLAN 1 depend on note'):
                         subject = u"Предыдущие задачи утверждаются"
                         msg_text = u"Прошу вывести задание."
-                        rec.notifications_history += '%s\tPLAN 1 depend on note\n' % str(now)
+                        rec.history_record('PLAN 1 depend on note')
                     elif rec.ngot('PLAN 2 depend on note'):
                         if rec.get_note_period(now, 'PLAN 1 depend on note') > 2:
                             subject = u"Предыдущие задачи утверждаются"
                             msg_text = u"Прошу вывести задание 2й раз."
-                            rec.notifications_history += '%s\tPLAN 2 depend on note\n' % str(now)
+                            rec.history_record('PLAN 2 depend on note')
                     elif rec.ngot('PLAN depend on 14 days note'):
                         if rec.get_note_period(now, 'PLAN 2 depend on note') > 13:
                             subject = u"14 Дней прошло"
                             msg_text = u"Задание неактуально, переведено в завершено."
-                            rec.notifications_history += '%s\tPLAN depend on 14 days note\n' % str(now)
+                            rec.history_record('PLAN depend on 14 days note')
                 if msg_text:
                     body = "<h3>%s</h3>" % subject
                     body += """<a href="%s/web#model=res.partner&amp;id=%s" """ % (base_url, rec.user_id.partner_id.id)
@@ -393,13 +393,13 @@ class TaskMod(models.Model):
                     rec.history_record('Stating 1')
                 elif rec.ngot('Stating 2'):
                     period = businessDuration(t(rec.date_end_pr), now_utc, unit='hour')
-                    if period > 0:
+                    if period > 24:
                         msg = u"Задание просрочено, срок утверждения истек. Прошу перевести в утверждено, если результат по заданию принят или указать срок утверждения со вторым переносом и причину переноса. Третий срок переноса недопустим"
                         rec.send_notification(rec.user_predicator_id, msg, u"Утверждение просрочено")
                         rec.history_record('Stating 2')
                 elif rec.ngot('Stating 3'):
                     period = businessDuration(t(rec.date_end_pr), now_utc, unit='hour')
-                    if period > 24:
+                    if period > 48:
                         msg = u"Сроки утверждения нарушены. Прошу перепланировать."
                         rec.send_notification(rec.user_id, msg, u"Утверждение просрочено")
                         rec.history_record('Stating 3')
@@ -429,7 +429,7 @@ class TaskMod(models.Model):
                     rec.history_record('Approvement 1')
                 elif rec.ngot('Approvement 2'):
                     period = businessDuration(t(rec.date_end_ap), now_utc, unit='hour')
-                    if period > 0:
+                    if period > 24:
                         msg = u"""Задание просрочено, срок подтверждения истек. 
                                   Прошу перевести в подтверждено, если результат задания принято, или указать срок подтверждения со вторым переносом и причину переноса. 
                                   Третий срок переноса недопустим."""
@@ -437,7 +437,7 @@ class TaskMod(models.Model):
                         rec.history_record('Approvement 2')
                 elif rec.ngot('Approvement 3'):
                     period = businessDuration(t(rec.date_end_ap), now_utc, unit='hour')
-                    if period > 24:
+                    if period > 48:
                         msg = u"Сроки подтверждения нарушены. Прошу перепланировать."
                         rec.send_notification(rec.user_id, msg, u"Подтверждение просрочено")
                         rec.history_record('Approvement 3')

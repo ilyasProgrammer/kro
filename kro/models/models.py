@@ -6,6 +6,17 @@ import pytz
 from business_duration import businessDuration
 import math
 
+states_rang = {'plan': 1,
+               'agreement': 2,
+               'assigned': 3,
+               'execution': 4,
+               'stating': 5,
+               'stated': 6,
+               'approvement': 7,
+               'approved': 8,
+               'finished': 9,
+               'correction': 10}
+
 
 class Project(models.Model):
     _inherit = 'project.project'
@@ -747,6 +758,13 @@ class Task(models.Model):
                         vals['mark_state'] = 2
                     elif period > 5:
                         vals['mark_state'] = 1
+                if states_rang[vals['state']] < states_rang[self.state]:
+                    new_hist = ''
+                    for l in self.notifications_history.splitlines():
+                        new_hist += '-\t' + l + '\n'
+                    vals['notifications_history'] = new_hist
+                    now_ekt = datetime.datetime.now(pytz.timezone('Asia/Yekaterinburg')).replace(tzinfo=None).replace(microsecond=0)
+                    vals['notifications_history'] += u"%s\tСтатус изменен на более ранний\t%s->%s\n" % (str(now_ekt), self.state, vals['state'])
         res = super(Task, self).write(vals=vals)
         return res
 
