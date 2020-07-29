@@ -626,7 +626,7 @@ class TaskMod(models.Model):
             self.notifications_history = ''
             return False
         for l in self.notifications_history.splitlines():
-            if l.split('\t')[1] == note:
+            if len(l.split('\t')) > 1 and l.split('\t')[1] == note:
                 return True
         return False
 
@@ -636,7 +636,7 @@ class TaskMod(models.Model):
             self.notifications_history = ''
             return True
         for l in self.notifications_history.splitlines():
-            if l.split('\t')[1] == note:
+            if len(l.split('\t')) > 1 and l.split('\t')[1] == note:
                 return False
         return True
 
