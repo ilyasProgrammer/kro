@@ -760,8 +760,9 @@ class Task(models.Model):
                         vals['mark_state'] = 1
                 if states_rang[vals['state']] < states_rang[self.state]:
                     new_hist = ''
-                    for l in self.notifications_history.splitlines():
-                        new_hist += '-\t' + l + '\n'
+                    if len(self.notifications_history) > 1:
+                        for l in self.notifications_history.splitlines():
+                            new_hist += '-\t' + l + '\n'
                     vals['notifications_history'] = new_hist
                     now_ekt = datetime.datetime.now(pytz.timezone('Asia/Yekaterinburg')).replace(tzinfo=None).replace(microsecond=0)
                     vals['notifications_history'] += u"%s\tСтатус изменен на более ранний\t%s->%s\n" % (str(now_ekt), self.state, vals['state'])
