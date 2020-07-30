@@ -760,7 +760,7 @@ class Task(models.Model):
                         vals['mark_state'] = 1
                 if states_rang[vals['state']] < states_rang[self.state]:
                     new_hist = ''
-                    if len(self.notifications_history) > 1:
+                    if self.notifications_history and len(self.notifications_history) > 1:
                         for l in self.notifications_history.splitlines():
                             new_hist += '-\t' + l + '\n'
                     vals['notifications_history'] = new_hist
