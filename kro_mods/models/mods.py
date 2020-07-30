@@ -18,28 +18,33 @@ class TaskMod(models.Model):
 
     @api.onchange('date_end_ex')
     def onchange_date_end_ex(self):
-        self.history_record(u'Срок выполнения изменен\t%s->%s' % (self._origin.date_end_ex, self.date_end_ex))
-        self.archive_notification('Execution')
+        if self.date_end_ex and self._origin.date_end_ex:
+            self.history_record(u'Срок выполнения изменен\t%s->%s' % (self._origin.date_end_ex, self.date_end_ex))
+            self.archive_notification('Execution')
 
     @api.onchange('date_end_pr')
     def onchange_date_end_pr(self):
-        self.history_record(u'Срок утверждения изменен\t%s->%s' % (self._origin.date_end_pr, self.date_end_pr))
-        self.archive_notification('Stating')
+        if self.date_end_pr and self._origin.date_end_pr:
+            self.history_record(u'Срок утверждения изменен\t%s->%s' % (self._origin.date_end_pr, self.date_end_pr))
+            self.archive_notification('Stating')
 
     @api.onchange('date_end_ap')
     def onchange_date_end_ap(self):
-        self.history_record(u'Срок подтверждения изменен\t%s->%s' % (self._origin.date_end_ap, self.date_end_ap))
-        self.archive_notification('Approvement')
+        if self.date_end_ap and self._origin.date_end_ap:
+            self.history_record(u'Срок подтверждения изменен\t%s->%s' % (self._origin.date_end_ap, self.date_end_ap))
+            self.archive_notification('Approvement')
 
     @api.onchange('user_predicator_id')
     def onchange_user_predicator_id(self):
-        self.history_record(u'Утверждающий изменен\t%s->%s' % (self._origin.user_predicator_id.name, self.user_predicator_id.name))
-        self.archive_notification('Stating')
+        if self.user_predicator_id and self._origin.user_predicator_id:
+            self.history_record(u'Утверждающий изменен\t%s->%s' % (self._origin.user_predicator_id.name, self.user_predicator_id.name))
+            self.archive_notification('Stating')
 
     @api.onchange('user_approver_id')
     def onchange_user_approver_id(self):
-        self.history_record(u'Подтверждающий изменен\t%s->%s' % (self._origin.user_approver_id.name, self.user_approver_id.name))
-        self.archive_notification('Approvement')
+        if self.user_approver_id and self._origin.user_approver_id:
+            self.history_record(u'Подтверждающий изменен\t%s->%s' % (self._origin.user_approver_id.name, self.user_approver_id.name))
+            self.archive_notification('Approvement')
 
     @api.multi
     def archive_notification(self, note):
