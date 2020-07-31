@@ -18,31 +18,31 @@ class TaskMod(models.Model):
 
     @api.onchange('date_end_ex')
     def onchange_date_end_ex(self):
-        if self.date_end_ex and self._origin.date_end_ex:
+        if self.date_end_ex and self._origin.date_end_ex and self.state != 'plan':
             self.history_record(u'Срок выполнения изменен\t%s->%s' % (self._origin.date_end_ex, self.date_end_ex))
             self.archive_notification('Execution')
 
     @api.onchange('date_end_pr')
     def onchange_date_end_pr(self):
-        if self.date_end_pr and self._origin.date_end_pr:
+        if self.date_end_pr and self._origin.date_end_pr and self.state != 'plan':
             self.history_record(u'Срок утверждения изменен\t%s->%s' % (self._origin.date_end_pr, self.date_end_pr))
             self.archive_notification('Stating')
 
     @api.onchange('date_end_ap')
     def onchange_date_end_ap(self):
-        if self.date_end_ap and self._origin.date_end_ap:
+        if self.date_end_ap and self._origin.date_end_ap and self.state != 'plan':
             self.history_record(u'Срок подтверждения изменен\t%s->%s' % (self._origin.date_end_ap, self.date_end_ap))
             self.archive_notification('Approvement')
 
     @api.onchange('user_predicator_id')
     def onchange_user_predicator_id(self):
-        if self.user_predicator_id and self._origin.user_predicator_id:
+        if self.user_predicator_id and self._origin.user_predicator_id and self.state != 'plan':
             self.history_record(u'Утверждающий изменен\t%s->%s' % (self._origin.user_predicator_id.name, self.user_predicator_id.name))
             self.archive_notification('Stating')
 
     @api.onchange('user_approver_id')
     def onchange_user_approver_id(self):
-        if self.user_approver_id and self._origin.user_approver_id:
+        if self.user_approver_id and self._origin.user_approver_id and self.state != 'plan':
             self.history_record(u'Подтверждающий изменен\t%s->%s' % (self._origin.user_approver_id.name, self.user_approver_id.name))
             self.archive_notification('Approvement')
 
