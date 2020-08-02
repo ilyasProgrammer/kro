@@ -97,5 +97,17 @@
             <field name="priority" eval="18"/>
             <field name="args">()</field>
         </record>
+        <record model="ir.cron" id="cron_task_automation_corrections">
+            <field name='name'>KRO: Tasks Reminders and Automation - CORRECTIONS</field>
+            <field name='interval_number'>20</field>
+            <field name='interval_type'>minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="active">False</field>
+            <field name="doall" eval="False"/>
+            <field name="model">project.task</field>
+            <field name="function">cron_task_automation_corrections</field>
+            <field name="priority" eval="19"/>
+            <field name="args">()</field>
+        </record>
     </data>
 </openerp>

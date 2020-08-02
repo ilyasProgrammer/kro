@@ -367,6 +367,8 @@ class TaskMod(models.Model):
                         msg = u"Сроки выполнения нарушены. Прошу перепланировать"
                         rec.send_notification(rec.user_id, msg, u"Выполнение просрочено ")
                         rec.history_record('Execution 3')
+                        rec.history_record('Corrections 1')
+                        rec.set_to_corrections()
                 time.sleep(1)
             except Exception as e:
                 log.error(rec)
@@ -403,6 +405,8 @@ class TaskMod(models.Model):
                         msg = u"Сроки утверждения нарушены. Прошу перепланировать."
                         rec.send_notification(rec.user_id, msg, u"Утверждение просрочено")
                         rec.history_record('Stating 3')
+                        rec.history_record('Corrections 1')
+                        rec.set_to_corrections()
                 time.sleep(1)
             except Exception as e:
                 log.error(rec)
@@ -441,6 +445,8 @@ class TaskMod(models.Model):
                         msg = u"Сроки подтверждения нарушены. Прошу перепланировать."
                         rec.send_notification(rec.user_id, msg, u"Подтверждение просрочено")
                         rec.history_record('Approvement 3')
+                        rec.history_record('Corrections 1')
+                        rec.set_to_corrections()
                 time.sleep(1)
             except Exception as e:
                 log.error(rec)
@@ -462,27 +468,37 @@ class TaskMod(models.Model):
                 if rec.ngot('Finished 1'):
                     rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
                     rec.history_record('Finished 1')
-                # elif rec.ngot('Finished 2'):
-                #     period = rec.get_note_bushours_period('Finished 1')
-                #     if period > 24:
-                #         rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
-                #         rec.history_record('Finished 2')
-                # elif rec.ngot('Finished 3'):
-                #     period = rec.get_note_bushours_period('Finished 2')
-                #     if period > 24:
-                #         rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
-                #         rec.history_record('Finished 3')
-                # elif rec.ngot('Finished 4'):
-                #     period = rec.get_note_bushours_period('Finished 3')
-                #     if period > 24:
-                #         rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
-                #         rec.history_record('Finished 4')
-                # elif rec.ngot('Finished 5'):
-                #     period = rec.get_note_bushours_period('Finished 4')
-                #     if period > 24:
-                #         rec.send_notification(rec.user_id, u"Прошу поставить оценку результата", u"Задание завершено")
-                #         rec.history_record('Finished 5')
                 time.sleep(1)
+            except Exception as e:
+                log.error(rec)
+                log.error(e)
+
+    # CORRECTIONS - Коррекция
+    @api.model
+    def cron_task_automation_corrections(self):
+        log.info("Started cron corrections")
+        corrections_tasks = self.env['project.task'].search([('state', '=', 'corrections')])
+        log.info("Corrections tasks: %s", corrections_tasks)
+        if corrections_tasks:
+            corrections_tasks.process_corrections_tasks()
+        log.info("Finished cron corrections")
+
+    @api.multi
+    def process_corrections_tasks(self):
+        for rec in self:
+            try:
+                if rec.got('Corrections 4'):
+                    continue
+                if rec.ngot('Corrections 2') and rec.get_note_bushours_period('Corrections 1') > 24:
+                    rec.send_notification(rec.user_id, u"Прошу перепланировать статус и сроки 2й раз.", u"Коррекция")
+                    rec.history_record('Corrections 2')
+                elif rec.ngot('Corrections 3') and rec.get_note_bushours_period('Corrections 3') > 24:
+                    rec.send_notification(rec.user_id, u"Прошу перепланировать статус и сроки 2й раз.", u"Коррекция")
+                    rec.history_record('Corrections 3')
+                elif rec.ngot('Corrections 4') and rec.get_note_bushours_period('Corrections 3') > 24:
+                    rec.send_notification(rec.user_id, u"Задание завершено как невыполненное.", u"Коррекция просрочена")
+                    rec.history_record('Corrections 4')
+                    rec.state = 'finished'
             except Exception as e:
                 log.error(rec)
                 log.error(e)
@@ -642,6 +658,16 @@ class TaskMod(models.Model):
             if len(l.split('\t')) > 1 and l.split('\t')[1] == note:
                 return False
         return True
+    
+    @api.multi
+    def set_to_corrections(self):
+        self.state = 'corrections'
+        if self.job_id and self.job_id.state == 'finished':
+            self.job_id.state = 'corrections'
+        # if self.job_aim_id and self.job_aim_id.state == 'finished':
+        #     self.job_aim_id.state = 'corrections'
+        if self.aim_id and self.aim_id.state == 'finished':
+            self.aim_id.state = 'corrections'
 
 
 def t(time_str):

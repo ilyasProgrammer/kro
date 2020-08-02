@@ -343,7 +343,7 @@ class Job(models.Model):
     _name = 'kro.job'
     _inherit = 'project.task'
     _description = u'Задача'
-    _order = 'code'
+    _order = 'id'
     code = fields.Char(string=u'Номер', required=True, default="/")
     date_start = fields.Date(string=u'Дата начала', compute='_time_count', store=True)
     date_end = fields.Date(string=u'Дата завершения', compute='_time_count', store=True)
@@ -680,6 +680,10 @@ class Task(models.Model):
             self.date_end = self.date_end_ap
         elif end_date_ap <= end_date_pr:
             self.date_end = self.date_end_pr
+        if self.job_id:
+            self.job_id._time_count()
+        if self.aim_id:
+            self.aim_id._time_count()
 
     @api.model
     def create(self, vals):
@@ -766,7 +770,25 @@ class Task(models.Model):
                     vals['notifications_history'] = new_hist
                     now_ekt = datetime.datetime.now(pytz.timezone('Asia/Yekaterinburg')).replace(tzinfo=None).replace(microsecond=0)
                     vals['notifications_history'] += u"%s\tСтатус изменен на более ранний\t%s->%s\n" % (str(now_ekt), self.state, vals['state'])
+                if vals['state'] not in ['plan', 'correction', 'finished']:
+                    if self.job_id and self.job_id.state == 'plan':
+                        self.job_id.state = 'defined'
+                    if self.job_aim_id and self.job_aim_id.state == 'plan':
+                        self.job_aim_id.state = 'defined'
+                    if self.aim_id and self.aim_id.state == 'plan':
+                        self.aim_id.state = 'defined'
         res = super(Task, self).write(vals=vals)
+        if len(self) == 1:
+            if self.state == 'finished':
+                if self.job_id and self.job_id.state != 'finished':
+                    if all([r.state == 'finished' for r in self.job_id.task_ids]):
+                        self.job_id.state = 'finished'
+                # if self.job_aim_id and self.job_aim_id.state != 'finished':
+                #     if all([r.state == 'finished' for r in self.job_aim_id.task_ids]):
+                #         self.job_aim_id.state = 'finished'
+                if self.aim_id and self.aim_id.state != 'finished':
+                    if all([r.state == 'finished' for r in self.aim_id.task_ids]):
+                        self.aim_id.state = 'finished'
         return res
 
 
