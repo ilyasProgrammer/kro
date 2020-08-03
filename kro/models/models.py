@@ -214,6 +214,7 @@ class Aim(models.Model):
          _('The code must be unique!')),
     ]
     private = fields.Boolean(default=False, string=u'Приватный')
+    finished_manually = fields.Boolean(default=False)
 
     @api.multi
     def _message_notification_recipients(self, message, recipients):
@@ -229,6 +230,8 @@ class Aim(models.Model):
             self.current_user_id = admins[0]
         else:
             self.current_user_id = self.user_id
+        if self.state == 'finished':
+            self.finished_manually = True
 
     @api.one
     @api.depends('job_ids', 'task_ids')
@@ -384,6 +387,7 @@ class Job(models.Model):
     planner = fields.Boolean(compute='_compute_fields', default=False, store=False)
     obs = fields.Boolean(compute='_compute_fields', default=False, store=False)
     private = fields.Boolean(default=False, string=u'Приватный')
+    finished_manually = fields.Boolean(default=False)
 
     @api.multi
     def _message_notification_recipients(self, message, recipients):
@@ -399,6 +403,8 @@ class Job(models.Model):
             self.current_user_id = admins[0]
         else:
             self.current_user_id = self.user_id
+        if self.state == 'finished':
+            self.finished_manually = True
 
     @api.one
     def _compute_fields(self):
@@ -771,12 +777,10 @@ class Task(models.Model):
                     now_ekt = datetime.datetime.now(pytz.timezone('Asia/Yekaterinburg')).replace(tzinfo=None).replace(microsecond=0)
                     vals['notifications_history'] += u"%s\tСтатус изменен на более ранний\t%s->%s\n" % (str(now_ekt), self.state, vals['state'])
                 if vals['state'] not in ['plan', 'correction', 'finished']:
-                    if self.job_id and self.job_id.state == 'plan':
+                    if (self.job_id and self.job_id.state == 'plan') or (self.job_id.finished_manually and self.job_id.state == 'finished'):
                         self.job_id.state = 'defined'
-                    if self.job_aim_id and self.job_aim_id.state == 'plan':
+                    if (self.job_aim_id and self.job_aim_id.state == 'plan') or (self.job_aim_id.finished_manually and self.job_aim_id.state == 'finished'):
                         self.job_aim_id.state = 'defined'
-                    if self.aim_id and self.aim_id.state == 'plan':
-                        self.aim_id.state = 'defined'
         res = super(Task, self).write(vals=vals)
         if len(self) == 1:
             if self.state == 'finished':
