@@ -686,10 +686,10 @@ class Task(models.Model):
             self.date_end = self.date_end_ap
         elif end_date_ap <= end_date_pr:
             self.date_end = self.date_end_pr
-        if self.job_id:
-            self.job_id._time_count()
-        if self.aim_id:
-            self.aim_id._time_count()
+        # if self.job_id:
+        #     self.job_id._time_count()
+        # if self.aim_id:
+        #     self.aim_id._time_count()
 
     @api.model
     def create(self, vals):
