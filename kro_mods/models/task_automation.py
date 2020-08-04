@@ -674,7 +674,7 @@ class TaskMod(models.Model):
     
     @api.multi
     def set_to_corrections(self):
-        self.state = 'corrections'
+        self.state = 'correction'
         if self.job_id and self.job_id.state == 'finished':
             self.job_id.state = 'corrections'
         # if self.job_aim_id and self.job_aim_id.state == 'finished':
