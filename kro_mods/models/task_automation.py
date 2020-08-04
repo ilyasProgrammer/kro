@@ -481,19 +481,18 @@ class TaskMod(models.Model):
         log.info("Corrections tasks: %s", corrections_tasks)
         if corrections_tasks:
             corrections_tasks.process_corrections_tasks()
-        for r in self.env['project.task'].search([('state', '=', 'execution')]):
-            if r.got('Execution 3'):
-                r.history_record('Corrections 1')
-                r.set_to_corrections()
-        for r in self.env['project.task'].search([('state', '=', 'stating')]):
-            if r.got('Stating 3'):
-                r.history_record('Corrections 1')
-                r.set_to_corrections()
-                r.set_to_corrections()
-        for r in self.env['project.task'].search([('state', '=', 'approvement')]):
-            if r.got('Approvement 3'):
-                r.history_record('Corrections 1')
-                r.set_to_corrections()
+        # for r in self.env['project.task'].search([('state', '=', 'execution')]):
+        #     if r.got('Execution 3'):
+        #         r.history_record('Corrections 1')
+        #         r.set_to_corrections()
+        # for r in self.env['project.task'].search([('state', '=', 'stating')]):
+        #     if r.got('Stating 3'):
+        #         r.history_record('Corrections 1')
+        #         r.set_to_corrections()
+        # for r in self.env['project.task'].search([('state', '=', 'approvement')]):
+        #     if r.got('Approvement 3'):
+        #         r.history_record('Corrections 1')
+        #         r.set_to_corrections()
         log.info("Finished cron corrections")
 
     @api.multi
