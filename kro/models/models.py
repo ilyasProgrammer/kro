@@ -782,17 +782,17 @@ class Task(models.Model):
                     if (self.job_aim_id and self.job_aim_id.state == 'plan') or (self.job_aim_id.finished_manually and self.job_aim_id.state == 'finished'):
                         self.job_aim_id.state = 'defined'
         res = super(Task, self).write(vals=vals)
-        # if len(self) == 1:
-        #     if self.state == 'finished':
-        #         if self.job_id and self.job_id.state != 'finished':
-        #             if all([r.state == 'finished' for r in self.job_id.task_ids]):
-        #                 self.job_id.state = 'finished'
-        #         # if self.job_aim_id and self.job_aim_id.state != 'finished':
-        #         #     if all([r.state == 'finished' for r in self.job_aim_id.task_ids]):
-        #         #         self.job_aim_id.state = 'finished'
-        #         if self.aim_id and self.aim_id.state != 'finished':
-        #             if all([r.state == 'finished' for r in self.aim_id.task_ids]):
-        #                 self.aim_id.state = 'finished'
+        if len(self) == 1:
+            if self.state == 'finished':
+                if self.job_id and self.job_id.state != 'finished':
+                    if all([r.state == 'finished' for r in self.job_id.task_ids]):
+                        self.job_id.state = 'finished'
+                # if self.job_aim_id and self.job_aim_id.state != 'finished':
+                #     if all([r.state == 'finished' for r in self.job_aim_id.task_ids]):
+                #         self.job_aim_id.state = 'finished'
+                if self.aim_id and self.aim_id.state != 'finished':
+                    if all([r.state == 'finished' for r in self.aim_id.task_ids]):
+                        self.aim_id.state = 'finished'
         return res
 
 
