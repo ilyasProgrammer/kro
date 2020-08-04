@@ -3,7 +3,7 @@
     <data>
         <record model="ir.cron" id="cron_task_automation_plan">
             <field name='name'>KRO: Tasks Reminders and Automation - PLAN</field>
-            <field name='interval_number'>10</field>
+            <field name='interval_number'>35</field>
             <field name='interval_type'>minutes</field>
             <field name="numbercall">-1</field>
             <field name="active">False</field>
@@ -15,7 +15,7 @@
         </record>
         <record model="ir.cron" id="cron_task_automation_agreement">
             <field name='name'>KRO: Tasks Reminders and Automation - AGREEMENT</field>
-            <field name='interval_number'>10</field>
+            <field name='interval_number'>35</field>
             <field name='interval_type'>minutes</field>
             <field name="numbercall">-1</field>
             <field name="active">False</field>
@@ -27,7 +27,7 @@
         </record>
         <record model="ir.cron" id="cron_task_assigned_plan">
             <field name='name'>KRO: Tasks Reminders and Automation - ASSIGNED</field>
-            <field name='interval_number'>10</field>
+            <field name='interval_number'>35</field>
             <field name='interval_type'>minutes</field>
             <field name="numbercall">-1</field>
             <field name="active">False</field>
@@ -39,7 +39,7 @@
         </record>
         <record model="ir.cron" id="cron_task_automation_execution">
             <field name='name'>KRO: Tasks Reminders and Automation - EXECUTION</field>
-            <field name='interval_number'>10</field>
+            <field name='interval_number'>35</field>
             <field name='interval_type'>minutes</field>
             <field name="numbercall">-1</field>
             <field name="active">False</field>
@@ -51,7 +51,7 @@
         </record>
         <record model="ir.cron" id="cron_task_automation_stating">
             <field name='name'>KRO: Tasks Reminders and Automation - STATING</field>
-            <field name='interval_number'>10</field>
+            <field name='interval_number'>35</field>
             <field name='interval_type'>minutes</field>
             <field name="numbercall">-1</field>
             <field name="active">False</field>
@@ -63,7 +63,7 @@
         </record>
         <record model="ir.cron" id="cron_task_automation_approvement">
             <field name='name'>KRO: Tasks Reminders and Automation - APPROVEMENT</field>
-            <field name='interval_number'>10</field>
+            <field name='interval_number'>35</field>
             <field name='interval_type'>minutes</field>
             <field name="numbercall">-1</field>
             <field name="active">False</field>
@@ -87,7 +87,7 @@
         </record>
         <record model="ir.cron" id="cron_task_automation_auto_state">
             <field name='name'>KRO: Tasks Reminders and Automation - Auto State Switch</field>
-            <field name='interval_number'>10</field>
+            <field name='interval_number'>35</field>
             <field name='interval_type'>minutes</field>
             <field name="numbercall">-1</field>
             <field name="active">False</field>
