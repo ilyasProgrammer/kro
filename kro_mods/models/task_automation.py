@@ -481,11 +481,11 @@ class TaskMod(models.Model):
         log.info("Corrections tasks: %s", corrections_tasks)
         if corrections_tasks:
             corrections_tasks.process_corrections_tasks()
-        for r in self.env['project.task'].search([]):
-            log.info(r)
-            if r.got('Corrections 1'):
-                msg = u"Прошу перепланировать статус и сроки в течение 3 дней. При отсутствии изменений и ответа задание перейдет в завершено как невыполненная через 10 дней."
-                r.send_notification(r.user_id, msg, u"Коррекция")
+        # for r in self.env['project.task'].search([]):
+        #     log.info(r)
+        #     if r.got('Corrections 1'):
+        #         msg = u"Прошу перепланировать статус и сроки в течение 3 дней. При отсутствии изменений и ответа задание перейдет в завершено как невыполненная через 10 дней."
+        #         r.send_notification(r.user_id, msg, u"Коррекция")
         log.info("Finished cron corrections")
 
     @api.multi
