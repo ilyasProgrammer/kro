@@ -165,7 +165,7 @@ class TaskMod(models.Model):
                             rec.history_record('Agreement expired by supervisor')
                 elif rec.got('Agreement approver supervisor assigned'):
                     if rec.get_note_bushours_period('Agreement approver supervisor assigned') > 24:
-                        if rec.user_approver_id and not rec.approved_by_approver:
+                        if rec.user_approver_id and rec.got_approver and not rec.approved_by_approver:
                             rec.send_notification(olga, u"Просрочено руководителем", u"Просрочено руководителем")
                             rec.history_record('Agreement expired by supervisor')
                 elif rec.got('Agreement predicator supervisor assigned'):
@@ -215,7 +215,7 @@ class TaskMod(models.Model):
                                         rec.send_notification(rec.user_id, msg, u"Нет руководителя у исполнителя")  # ОЗП
                                         rec.history_record('Agreement blocked\texecutor')
                                         rec.state = 'correction'
-                        if rec.user_approver_id and not rec.approved_by_approver:
+                        if rec.user_approver_id and rec.got_approver and not rec.approved_by_approver:
                             if rec.user_approver_id.manager_id:
                                 rec.user_approver_id = rec.user_approver_id.manager_id
                                 rec.send_notification(rec.user_id, u"Подтверждающий заменен на его руководителя. Нет согласования больше 3х рабочих дней.", u"Автозамена подтверждающего")  # ОЗП
@@ -241,7 +241,7 @@ class TaskMod(models.Model):
                     rec.history_record('Agreement 1')
                     if rec.user_executor_id and not rec.approved_by_executor:
                         rec.send_notification(rec.user_executor_id, msg_text, subject)
-                    if rec.user_approver_id and not rec.approved_by_approver:
+                    if rec.user_approver_id and rec.got_approver and not rec.approved_by_approver:
                         rec.send_notification(rec.user_approver_id, msg_text, subject)
                     if rec.user_predicator_id and not rec.approved_by_predicator:
                         rec.send_notification(rec.user_predicator_id, msg_text, subject)
@@ -278,7 +278,7 @@ class TaskMod(models.Model):
                                     rec.send_notification(rec.user_executor_id, msg_text, subject)
                                     rec.send_notification(rec.user_id, msg_text, subject)  # ОЗП
                                     rec.history_record('Agreement 2\texecutor')
-                        if rec.user_approver_id and not rec.approved_by_approver:
+                        if rec.user_approver_id and rec.got_approver and not rec.approved_by_approver:
                             msg_text = u"Задание не согласовывается. Подтверждающий не проявляет активности больше 1 рабочего дня."
                             subject = u"Согласование просрочено. Прошло 48 часов."
                             rec.send_notification(rec.user_approver_id, msg_text, subject)
@@ -326,6 +326,8 @@ class TaskMod(models.Model):
                         if rec.user_executor_id.manager_id:
                             rec.send_notification(rec.user_executor_id.manager_id, msg, u"Назначено. Нет действий.")
                         rec.history_record('Assigned 3')
+                        rec.history_record('Corrections 1')
+                        rec.set_to_corrections()
             except Exception as e:
                 log.error(rec)
                 log.error(e)
