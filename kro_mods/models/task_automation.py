@@ -359,13 +359,13 @@ class TaskMod(models.Model):
                         rec.history_record('Execution 1')
                 elif rec.ngot('Execution 2'):
                     period = businessDuration(t(rec.date_end_ex), now_utc, unit='hour')
-                    if period > 0:
+                    if period > 24:
                         msg = u"Задание просрочено, срок выполнения истек. Прошу перевести в утверждение, если задание выполнено или указать срок выполнения со вторым переносом и причину переноса. Третий срок переноса недопустим"
                         rec.send_notification(rec.user_executor_id, msg, u"Выполнение просрочено")
                         rec.history_record('Execution 2')
                 elif rec.got('Execution 2') and rec.ngot('Execution 3'):
                     period = businessDuration(t(rec.date_end_ex), now_utc, unit='hour')
-                    if period > 24:
+                    if period > 48:
                         msg = u"Сроки выполнения нарушены. Прошу перепланировать"
                         rec.send_notification(rec.user_id, msg, u"Выполнение просрочено ")
                         rec.history_record('Execution 3')
