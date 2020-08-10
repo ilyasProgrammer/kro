@@ -589,6 +589,18 @@ class Task(models.Model):
             self.current_user_id = self.user_approver_id
         if self.state in ['finished']:
             self.current_user_id = None
+        if self.state in ['agreement', 'assigned', 'execution', 'stating', 'stated', 'approvement', 'approved', 'finished']:
+            if self.description is False or self.description == '':
+                self.sudo().write({'state': 'plan'})
+            elif self.required_result is False or self.required_result == '':
+                self.sudo().write({'state': 'plan'})
+            elif not self.user_executor_id or not self.date_start or not self.date_end_ex:
+                self.sudo().write({'state': 'plan'})
+            elif not self.user_predicator_id or not self.date_start_pr or not self.date_end_pr:
+                self.sudo().write({'state': 'plan'})
+            elif self.got_approver:
+                if not self.user_approver_id or not self.date_start_ap or not self.date_end_ap:
+                    self.sudo().write({'state': 'plan'})
 
     @api.one
     def _get_attached_docs(self):
