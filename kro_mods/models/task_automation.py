@@ -477,7 +477,7 @@ class TaskMod(models.Model):
     @api.model
     def cron_task_automation_corrections(self):
         log.info("Started cron corrections")
-        corrections_tasks = self.env['project.task'].search([('state', '=', 'corrections')])
+        corrections_tasks = self.env['project.task'].search([('state', '=', 'correction')])
         log.info("Corrections tasks: %s", corrections_tasks)
         if corrections_tasks:
             corrections_tasks.process_corrections_tasks()
@@ -661,7 +661,7 @@ class TaskMod(models.Model):
     
     @api.multi
     def set_to_corrections(self):
-        self.state = 'corrections'
+        self.state = 'correction'
         if self.job_id and self.job_id.state == 'finished':
             self.job_id.state = 'corrections'
         # if self.job_aim_id and self.job_aim_id.state == 'finished':
