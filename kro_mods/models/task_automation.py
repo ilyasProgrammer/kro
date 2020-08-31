@@ -512,7 +512,7 @@ class TaskMod(models.Model):
                     rec.send_notification(rec.user_id, u"Прошу перепланировать статус и сроки 2й раз.", u"Коррекция")
                     rec.history_record('Corrections 2')
                 elif rec.ngot('Corrections 3') and rec.get_note_bushours_period('Corrections 2') > 24:
-                    rec.send_notification(rec.user_id, u"Прошу перепланировать статус и сроки 2й раз.", u"Коррекция")
+                    rec.send_notification(rec.user_id, u"Прошу перепланировать статус и сроки 3й раз.", u"Коррекция")
                     rec.history_record('Corrections 3')
                 elif rec.ngot('Corrections 4') and rec.get_note_bushours_period('Corrections 3') > 24:
                     rec.send_notification(rec.user_id, u"Задание завершено как невыполненное.", u"Коррекция просрочена")
