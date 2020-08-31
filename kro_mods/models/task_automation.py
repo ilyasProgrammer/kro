@@ -511,7 +511,7 @@ class TaskMod(models.Model):
                 if rec.ngot('Corrections 2') and rec.get_note_bushours_period('Corrections 1') > 24:
                     rec.send_notification(rec.user_id, u"Прошу перепланировать статус и сроки 2й раз.", u"Коррекция")
                     rec.history_record('Corrections 2')
-                elif rec.ngot('Corrections 3') and rec.get_note_bushours_period('Corrections 3') > 24:
+                elif rec.ngot('Corrections 3') and rec.get_note_bushours_period('Corrections 2') > 24:
                     rec.send_notification(rec.user_id, u"Прошу перепланировать статус и сроки 2й раз.", u"Коррекция")
                     rec.history_record('Corrections 3')
                 elif rec.ngot('Corrections 4') and rec.get_note_bushours_period('Corrections 3') > 24:
