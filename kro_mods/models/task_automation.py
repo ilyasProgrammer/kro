@@ -187,6 +187,7 @@ class TaskMod(models.Model):
                                 period = businessDuration(t(executor_blockers.create_date), now_utc, unit='hour')
                                 if period > 24 and rec.ngot('Agreement blocked'):
                                     msg = u"Вопрошаемый не отвечает. Спрашивал исполнитель: %s. Вопрос задан: %s" % (executor_blockers.set_by_id.name, executor_blockers.user_id.name)
+                                    msg += u"\nПрошу перепланировать статус и сроки в течение 3 дней. При отсутствии изменений и ответа задание перейдет в завершено как невыполненное через 10 дней."
                                     rec.send_notification(rec.user_id, msg, u"Блокировка задания. Нет ответа.")
                                     rec.history_record('Agreement blocked')
                                     rec.history_record('Corrections 1')
@@ -207,6 +208,7 @@ class TaskMod(models.Model):
                                             msg = u"""Сроки согласования просрочены и у исполнителя нет руководителя. Задание заблокировано.
                                                       Иполнитель задал вопрос. На него был дан ответ. Прошло больше одного рабочего дня. 
                                                       Исполнитель не согласовал и не задал новых вопросов."""
+                                            msg += u"\nПрошу перепланировать статус и сроки в течение 3 дней. При отсутствии изменений и ответа задание перейдет в завершено как невыполненное через 10 дней."
                                             rec.send_notification(rec.user_id, msg, "Нет руководителя у исполнителя")  # ОЗП
                                             rec.history_record('Agreement blocked\texecutor')
                                             rec.history_record('Corrections 1')
@@ -220,6 +222,7 @@ class TaskMod(models.Model):
                                         rec.history_record('Agreement executors supervisor assigned')
                                     else:
                                         msg = u"""Сроки согласования просрочены и у исполнителя нет руководителя. Задание заблокировано."""
+                                        msg += u"\nПрошу перепланировать статус и сроки в течение 3 дней. При отсутствии изменений и ответа задание перейдет в завершено как невыполненное через 10 дней."
                                         rec.send_notification(rec.user_id, msg, u"Нет руководителя у исполнителя")  # ОЗП
                                         rec.history_record('Agreement blocked\texecutor')
                                         rec.history_record('Corrections 1')
@@ -231,6 +234,7 @@ class TaskMod(models.Model):
                                 rec.history_record('Agreement approver supervisor assigned')
                             else:
                                 msg = u"""Сроки согласования просрочены и у подтверждающего нет руководителя. Задание заблокировано."""
+                                msg += u"\nПрошу перепланировать статус и сроки в течение 3 дней. При отсутствии изменений и ответа задание перейдет в завершено как невыполненное через 10 дней."
                                 rec.send_notification(rec.user_id, msg, u"Нет руководителя у подтверждающего")  # ОЗП
                                 rec.history_record('Agreement blocked\tapprover')
                                 rec.history_record('Corrections 1')
@@ -242,6 +246,7 @@ class TaskMod(models.Model):
                                 rec.history_record('Agreement predicator supervisor assigned')
                             else:
                                 msg = u"""Сроки согласования просрочены и у утверждающего нет руководителя. Задание заблокировано."""
+                                msg += u"\nПрошу перепланировать статус и сроки в течение 3 дней. При отсутствии изменений и ответа задание перейдет в завершено как невыполненное через 10 дней."
                                 rec.send_notification(rec.user_id, msg, u"Нет руководителя у утверждающего")  # ОЗП
                                 rec.history_record('Agreement blocked\tpredicator')
                                 rec.history_record('Corrections 1')
@@ -334,6 +339,7 @@ class TaskMod(models.Model):
                 elif rec.got('Assigned 2') and rec.ngot('Assigned 3'):
                     if rec.get_note_bushours_period('Assigned 2') > 24:
                         msg = u"Действий нет, прошу сменить исполнителя."
+                        msg += u"\nПрошу перепланировать статус и сроки в течение 3 дней. При отсутствии изменений и ответа задание перейдет в завершено как невыполненное через 10 дней."
                         rec.send_notification(rec.user_id, msg, u"Назначено. Нет действий.")  # ОЗП
                         if rec.user_executor_id.manager_id:
                             rec.send_notification(rec.user_executor_id.manager_id, msg, u"Назначено. Нет действий.")
@@ -378,7 +384,8 @@ class TaskMod(models.Model):
                 elif rec.got('Execution 2') and rec.ngot('Execution 3'):
                     period = businessDuration(t(rec.date_end_ex), now_utc, unit='hour')
                     if period > 48:
-                        msg = u"Сроки выполнения нарушены. Прошу перепланировать"
+                        # msg = u"Сроки выполнения нарушены. Прошу перепланировать"
+                        msg = u"Прошу перепланировать статус и сроки в течение 3 дней. При отсутствии изменений и ответа задание перейдет в завершено как невыполненное через 10 дней."
                         rec.send_notification(rec.user_id, msg, u"Выполнение просрочено ")
                         rec.history_record('Execution 3')
                         rec.history_record('Corrections 1')
@@ -416,7 +423,8 @@ class TaskMod(models.Model):
                 elif rec.ngot('Stating 3'):
                     period = businessDuration(t(rec.date_end_pr), now_utc, unit='hour')
                     if period > 48:
-                        msg = u"Сроки утверждения нарушены. Прошу перепланировать."
+                        # msg = u"Сроки утверждения нарушены. Прошу перепланировать."
+                        msg = u"Прошу перепланировать статус и сроки в течение 3 дней. При отсутствии изменений и ответа задание перейдет в завершено как невыполненное через 10 дней."
                         rec.send_notification(rec.user_id, msg, u"Утверждение просрочено")
                         rec.history_record('Stating 3')
                         rec.history_record('Corrections 1')
@@ -456,7 +464,8 @@ class TaskMod(models.Model):
                 elif rec.ngot('Approvement 3'):
                     period = businessDuration(t(rec.date_end_ap), now_utc, unit='hour')
                     if period > 48:
-                        msg = u"Сроки подтверждения нарушены. Прошу перепланировать."
+                        # msg = u"Сроки подтверждения нарушены. Прошу перепланировать."
+                        msg = u"Прошу перепланировать статус и сроки в течение 3 дней. При отсутствии изменений и ответа задание перейдет в завершено как невыполненное через 10 дней."
                         rec.send_notification(rec.user_id, msg, u"Подтверждение просрочено")
                         rec.history_record('Approvement 3')
                         rec.history_record('Corrections 1')
@@ -514,7 +523,7 @@ class TaskMod(models.Model):
                 elif rec.ngot('Corrections 3') and rec.get_note_bushours_period('Corrections 2') > 24:
                     rec.send_notification(rec.user_id, u"Прошу перепланировать статус и сроки 3й раз.", u"Коррекция")
                     rec.history_record('Corrections 3')
-                elif rec.ngot('Corrections 4') and rec.get_note_bushours_period('Corrections 3') > 24:
+                elif rec.ngot('Corrections 4') and rec.get_note_bushours_period('Corrections 3') > 24*4:
                     rec.send_notification(rec.user_id, u"Задание завершено как невыполненное.", u"Коррекция просрочена")
                     rec.history_record('Corrections 4')
                     rec.state = 'finished'
