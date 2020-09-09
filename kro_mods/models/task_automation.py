@@ -369,10 +369,11 @@ class TaskMod(models.Model):
                     continue
                 elif rec.ngot('Execution 1'):
                     period = businessDuration(now_utc, t(rec.date_end_ex), unit='hour')
+                    exceeded = businessDuration(t(rec.date_end_ex), now_utc, unit='hour')
                     if period < 25:
                         rec.send_notification(rec.user_executor_id, u"Разрешите Вам напомнить, что %s дата выполнения задания заканчивается." % str(rec.date_end_ex), u"Выполнение")
                         rec.history_record('Execution 1')
-                    elif period < 1 or math.isnan(period):
+                    elif (period < 1 or math.isnan(period)) and exceeded > 23:
                         rec.send_notification(rec.user_executor_id, u"Задание просрочено, срок выполнения истек. Прошу перевести в утверждение.", u"Выполнение")
                         rec.history_record('Execution 1')
                 elif rec.ngot('Execution 2'):
