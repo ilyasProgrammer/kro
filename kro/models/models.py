@@ -509,11 +509,11 @@ class Task(models.Model):
     code = fields.Char(string=u'Номер', required=True, default="/")
     date_end = fields.Date(compute='_set_date_end', track_visibility='always')
     date_start = fields.Date(u'Исполнитель дата начала', track_visibility='always', copy=False)
-    date_end_ex = fields.Date(u'Исполнитель дата окончания', track_visibility='onchange')
-    date_start_pr = fields.Date(u'Утверждающий дата начала', track_visibility='onchange')
-    date_end_pr = fields.Date(u'Утверждающий дата окончания', track_visibility='onchange')
-    date_start_ap = fields.Date(u'Подтверждающий дата начала', track_visibility='onchange')
-    date_end_ap = fields.Date(u'Подтверждающий дата окончания', track_visibility='always')
+    date_end_ex = fields.Date(u'Исполнитель дата окончания', track_visibility='onchange', copy=False)
+    date_start_pr = fields.Date(u'Утверждающий дата начала', track_visibility='onchange', copy=False)
+    date_end_pr = fields.Date(u'Утверждающий дата окончания', track_visibility='onchange', copy=False)
+    date_start_ap = fields.Date(u'Подтверждающий дата начала', track_visibility='onchange', copy=False)
+    date_end_ap = fields.Date(u'Подтверждающий дата окончания', track_visibility='always', copy=False)
     plan_time_ex = fields.Float(u'План по времени исполнитель', track_visibility='onchange', copy=False)
     plan_time_pr = fields.Float(u'План по времени утверждающий', track_visibility='onchange', copy=False)
     plan_time_ap = fields.Float(u'План по времени подтверджающий', track_visibility='onchange', copy=False)
@@ -534,13 +534,13 @@ class Task(models.Model):
 
     required_result = fields.Text(u'Требуемый результат', track_visibility='onchange')
     priority = fields.Selection([('0', u'Низкий'), ('1', u'Средний'), ('2', u'Высокий')], u'Приоритет', select=True, track_visibility='onchange')
-    user_executor_id = fields.Many2one('res.users', string=u'Исполнитель', ondelete="set null", track_visibility='onchange')
-    user_predicator_id = fields.Many2one('res.users', string=u'Утверждающий', ondelete="set null", track_visibility='onchange')
-    user_approver_id = fields.Many2one('res.users', string=u'Подтверждающий', ondelete="set null", track_visibility='onchange')
+    user_executor_id = fields.Many2one('res.users', string=u'Исполнитель', ondelete="set null", track_visibility='onchange', copy=False)
+    user_predicator_id = fields.Many2one('res.users', string=u'Утверждающий', ondelete="set null", track_visibility='onchange', copy=False)
+    user_approver_id = fields.Many2one('res.users', string=u'Подтверждающий', ondelete="set null", track_visibility='onchange', copy=False)
     current_user_id = fields.Many2one('res.users', compute='_get_responsible', string=u'Ответственный', track_visibility='always', store=True)
-    approved_by_executor = fields.Boolean(u'Согласовал исполнитель', track_visibility='onchange')
-    approved_by_predicator = fields.Boolean(u'Согласовал утверждающий', track_visibility='onchange')
-    approved_by_approver = fields.Boolean(u'Согласовал подтверждающий', track_visibility='onchange')
+    approved_by_executor = fields.Boolean(u'Согласовал исполнитель', track_visibility='onchange', copy=False)
+    approved_by_predicator = fields.Boolean(u'Согласовал утверждающий', track_visibility='onchange', copy=False)
+    approved_by_approver = fields.Boolean(u'Согласовал подтверждающий', track_visibility='onchange', copy=False)
     state = fields.Selection([('plan', u'Планирование'),
                               ('agreement', u'Согласование'),
                               ('assigned', u'Назначено'),
@@ -708,30 +708,9 @@ class Task(models.Model):
         if vals['job_id']:
             job = self.env['kro.job'].browse(vals['job_id'])
             vals['private'] = job.private
-        subs = []
-        vals['user_id'] = self._uid  # для копирования
-        user = self.env['res.users'].browse(vals['user_id'])
-        if vals.get('user_executor_id', False):
-            executor = self.env['res.users'].browse(vals['user_executor_id'])
-            if executor != user:
-                subs += self.env['mail.followers']._add_follower_command(self._name, [], {executor.partner_id.id: None}, {}, force=True)[0]
-        if vals.get('user_approver_id', False):
-            approver = self.env['res.users'].browse(vals['user_approver_id'])
-            if approver != user:
-                subs += self.env['mail.followers']._add_follower_command(self._name, [], {approver.partner_id.id: None}, {}, force=True)[0]
-        if vals.get('user_predicator_id', False):
-            predicator = self.env['res.users'].browse(vals['user_predicator_id'])
-            if predicator != user:
-                subs += self.env['mail.followers']._add_follower_command(self._name, [], {predicator.partner_id.id: None}, {}, force=True)[0]
-        unique_subs = make_unique(subs)
-        if len(subs):
-            vals['message_follower_ids'] = unique_subs
-            partner_ids = []
-            for partner in vals['message_follower_ids']:
-                partner_ids.append((4, partner[2]['partner_id']))
-            if len(partner_ids):
-                vals['partner_ids'] = partner_ids
         res = super(Task, self).create(vals)
+        participants = res.user_executor_id + res.user_predicator_id + res.user_approver_id + res.user_id
+        res.sudo().message_subscribe_users(user_ids=participants.ids)
         # res.with_context({'mail_post_autofollow': True}).message_post(body='Новая задача', subject='Тема', message_type='notification', subtype='mail.mt_comment', partner_ids=partner_ids)
         return res
 
@@ -793,7 +772,12 @@ class Task(models.Model):
                         self.job_id.state = 'defined'
                     if (self.job_aim_id and self.job_aim_id.state == 'plan') or (self.job_aim_id.finished_manually and self.job_aim_id.state == 'finished'):
                         self.job_aim_id.state = 'defined'
+            if not vals.get('message_follower_ids'):
+                # participants = self.user_executor_id + self.user_predicator_id + self.user_approver_id + self.user_id
+                participants = [vals.get('user_executor_id'), vals.get('user_predicator_id'), vals.get('user_approver_id'), vals.get('user_id')]
+                self.sudo().message_subscribe_users(user_ids=participants)
         res = super(Task, self).write(vals=vals)
+        self.message_auto_subscribe(updated_fields=vals.keys())
         if len(self) == 1:
             if self.state == 'finished':
                 if self.job_id and self.job_id.state != 'finished':
