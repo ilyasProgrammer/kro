@@ -777,7 +777,7 @@ class Task(models.Model):
                 participants = [vals.get('user_executor_id'), vals.get('user_predicator_id'), vals.get('user_approver_id'), vals.get('user_id')]
                 self.sudo().message_subscribe_users(user_ids=participants)
         res = super(Task, self).write(vals=vals)
-        self.message_auto_subscribe(updated_fields=vals.keys())
+        # self.message_auto_subscribe(updated_fields=vals.keys())
         if len(self) == 1:
             if self.state == 'finished':
                 if self.job_id and self.job_id.state != 'finished':
