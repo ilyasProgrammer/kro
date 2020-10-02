@@ -744,21 +744,22 @@ class Task(models.Model):
                 vals['state_history'] = (self.state_history or '') + "%s\t%s\t%s\t%s\n" % (moment, vals['state'], current_user.name, self.env.uid)
                 if vals['state'] == 'stating':
                     now_utc = datetime.datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
-                    period = businessDuration(t(self.date_end_ex), now_utc, unit='day')
-                    if math.isnan(period):
-                        vals['mark_state'] = 7
-                    elif period == 0:
-                        vals['mark_state'] = 6
-                    elif period == 1:
-                        vals['mark_state'] = 5
-                    elif period == 2:
-                        vals['mark_state'] = 4
-                    elif period == 3:
-                        vals['mark_state'] = 3
-                    elif period == 4 or period == 5:
-                        vals['mark_state'] = 2
-                    elif period > 5:
-                        vals['mark_state'] = 1
+                    if self.date_end_ex:
+                        period = businessDuration(t(self.date_end_ex), now_utc, unit='day')
+                        if math.isnan(period):
+                            vals['mark_state'] = 7
+                        elif period == 0:
+                            vals['mark_state'] = 6
+                        elif period == 1:
+                            vals['mark_state'] = 5
+                        elif period == 2:
+                            vals['mark_state'] = 4
+                        elif period == 3:
+                            vals['mark_state'] = 3
+                        elif period == 4 or period == 5:
+                            vals['mark_state'] = 2
+                        elif period > 5:
+                            vals['mark_state'] = 1
                 if states_rang[vals['state']] < states_rang[self.state]:
                     new_hist = ''
                     if self.notifications_history and len(self.notifications_history) > 1:

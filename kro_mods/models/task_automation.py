@@ -141,7 +141,8 @@ class TaskMod(models.Model):
 
     @api.multi
     def process_agreement_tasks(self):
-        olga = self.env['res.users'].browse(66)
+        # olga = self.env['res.users'].browse(66)
+        martynova = self.env['res.users'].browse(43)
         now_utc = datetime.now(pytz.timezone('UTC')).replace(tzinfo=None).replace(microsecond=0)
         for rec in self:
             try:
@@ -161,21 +162,21 @@ class TaskMod(models.Model):
                 elif rec.got('Agreement executors supervisor assigned'):
                     if rec.get_note_bushours_period('Agreement executors supervisor assigned') > 24:
                         if rec.user_executor_id and not rec.approved_by_executor:
-                            rec.send_notification(olga, u"Просрочено руководителем", u"Просрочено руководителем")
+                            rec.send_notification(martynova, u"Просрочено руководителем", u"Просрочено руководителем")
                             rec.history_record('Agreement expired by supervisor')
                             rec.history_record('Corrections 1')
                             rec.set_to_corrections()
                 elif rec.got('Agreement approver supervisor assigned'):
                     if rec.get_note_bushours_period('Agreement approver supervisor assigned') > 24:
                         if rec.user_approver_id and rec.got_approver and not rec.approved_by_approver:
-                            rec.send_notification(olga, u"Просрочено руководителем", u"Просрочено руководителем")
+                            rec.send_notification(martynova, u"Просрочено руководителем", u"Просрочено руководителем")
                             rec.history_record('Agreement expired by supervisor')
                             rec.history_record('Corrections 1')
                             rec.set_to_corrections()
                 elif rec.got('Agreement predicator supervisor assigned'):
                     if rec.get_note_bushours_period('Agreement predicator supervisor assigned') > 24:
                         if rec.user_predicator_id and not rec.approved_by_predicator:
-                            rec.send_notification(olga, u"Просрочено руководителем", u"Просрочено руководителем")
+                            rec.send_notification(martynova, u"Просрочено руководителем", u"Просрочено руководителем")
                             rec.history_record('Agreement expired by supervisor')
                             rec.history_record('Corrections 1')
                             rec.set_to_corrections()
