@@ -602,8 +602,12 @@ class Task(models.Model):
                 if not self.user_approver_id or not self.date_start_ap or not self.date_end_ap:
                     self.sudo().write({'state': 'plan'})
         if self.state not in ['agreement', 'plan']:
-            if not self.approved_by_executor or not self.approved_by_approver or (self.got_approver and not self.approved_by_approver):
-                self.sudo().write({'state': 'agreement'})
+            if self.got_approver:
+                if not self.approved_by_executor or not self.approved_by_predicator or not self.approved_by_approver:
+                    self.sudo().write({'state': 'agreement'})
+            else:
+                if not self.approved_by_executor or not self.approved_by_predicator:
+                    self.sudo().write({'state': 'agreement'})
 
     @api.one
     def _get_attached_docs(self):
