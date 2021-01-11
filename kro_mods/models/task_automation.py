@@ -693,12 +693,13 @@ class TaskMod(models.Model):
     def set_to_corrections(self):
         self.state = 'correction'
         if self.job_id and self.job_id.state == 'finished':
-            self.job_id.state = 'corrections'
+            # self.job_id.state = 'corrections'
+            pass
         # if self.job_aim_id and self.job_aim_id.state == 'finished':
         #     self.job_aim_id.state = 'corrections'
         if self.aim_id and self.aim_id.state == 'finished':
-            self.aim_id.state = 'corrections'
-
+            # self.aim_id.state = 'corrections'
+            pass
 
 def t(time_str):
     if len(time_str) == 10:
