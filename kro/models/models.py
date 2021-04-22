@@ -5,6 +5,7 @@ import datetime
 import pytz
 from business_duration import businessDuration
 import math
+from openerp.exceptions import AccessError, ValidationError
 
 states_rang = {'plan': 1,
                'agreement': 2,
@@ -566,7 +567,8 @@ class Task(models.Model):
     private = fields.Boolean(default=False, string=u'Приватный')
     blocking_user_ids = fields.One2many('res.users.blocking', 'task_id', string=u'Блокирующие', copy=False)
     state_history = fields.Text(u'История статусов', default="", copy=False)
-
+    date_end_ex_change_qty = fields.Integer(default=0)
+    
     @api.multi
     def _message_notification_recipients(self, message, recipients):
         result = super(Task, self)._message_notification_recipients(message, recipients)
@@ -784,6 +786,18 @@ class Task(models.Model):
                 # participants = self.user_executor_id + self.user_predicator_id + self.user_approver_id + self.user_id
                 participants = [vals.get('user_executor_id'), vals.get('user_predicator_id'), vals.get('user_approver_id'), vals.get('user_id')]
                 self.sudo().message_subscribe_users(user_ids=participants)
+            if vals.get('date_end_ex'):
+                if self.state not in ['plan', 'correction', 'finished']:
+                    # olga = self.env['res.users'].browse(66)
+                    # timur = self.env['res.users'].browse(91)
+                    if self.date_end_ex_change_qty is False:
+                        self.date_end_ex_change_qty = 0
+                    if self.date_end_ex_change_qty > 1 and self.env.uid not in [66, 91]:
+                        raise ValidationError('Срок уже был изменен 2 раза. Третий раз изменять срок исполнения запрещено.')
+                    else:
+                        vals['date_end_ex_change_qty'] = self.date_end_ex_change_qty + 1
+            if vals.get('state') and vals.get('state') == 'plan':
+                vals['date_end_ex_change_qty'] = 0  # Reset
         res = super(Task, self).write(vals=vals)
         # self.message_auto_subscribe(updated_fields=vals.keys())
         if len(self) == 1:
